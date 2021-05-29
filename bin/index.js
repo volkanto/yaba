@@ -1,29 +1,15 @@
 #!/usr/bin/env node
 
-// const chalk = require("chalk");
-// const boxen = require("boxen");
-
-// const greeting = chalk.white.bold("Hello!");
-
-// const boxenOptions = {
-//  padding: 1,
-//  margin: 1,
-//  borderStyle: "round",
-//  borderColor: "green",
-//  backgroundColor: "#555555"
-// };
-// const msgBox = boxen( greeting, boxenOptions );
-
-// console.log(msgBox);
-
 const yargs = require("yargs");
-const axios = require("axios");
 const { Octokit } = require("octokit");
 const helper = require('./utils/helper.js');
 const pkg = require('../package.json');
+const chalk = require("chalk");
+const log = console.log;
+const error = chalk.bold.red;
 
 const octokit = new Octokit({
-    auth: process.env.GITHUB_ACCESS_TOKEN_2
+    auth: process.env.GITHUB_ACCESS_TOKEN
 });
 
 async function run() {
@@ -32,64 +18,62 @@ async function run() {
 
         const options = yargs
             .version(pkg.version)
-            .usage("Usage: yaba -o <owner> -r <repository> -t <tag> -n <release-name> -b <body> -d <draft>")
+            .usage("Usage: yaba -o <owner> -r <repository> -t <tag> -n <release-name> -b <body> -d <draft> -c")
             .option("o", { alias: "owner", describe: "The repository owner.", type: "string" })
             .option("r", { alias: "repo", describe: "The repository name.", type: "string" })
             .option("t", { alias: "tag", describe: "The name of the tag.", type: "string" })
-            .option("n", { alias: "release-name", describe: "The name of the release.", type: "string", demandOption: true })
-            .option("b", { alias: "body", describe: "Text describing the contents of the tag.", type: "string" })
-            .option("d", { alias: "draft", describe: "`true` makes the release a draft, and `false` publishes the release.", type: "boolean" })
+            .option("n", { alias: "release-name", describe: "The name of the release.", type: "string" })
+            .option("b", { alias: "body", describe: "Text describing the contents of the tag. If not provided, the default changelog will be generated with the usage of the difference of master and latest release.", type: "string" })
+            .option("d", { alias: "draft", describe: "`true` or only using `-d` makes the release a draft.", type: "boolean" })
+            .option("c", { alias: "changelog", describe: "Shows only changelog without creating the release.", type: "boolean" })
             .argv;
 
         if (options.repo == undefined && !helper.isGitRepo()) {
-            console.log("The directory is not a Git repo.");
+            error(`The directory '${helper.retrieveCurrentDirectory()}' is not a Git repo.`);
             return;
         }
 
         const { data: user } = await octokit.request('GET /user');
         const username = user.login;
-        console.log(`logged in as ${user.name} - ${user.login}`);
-        console.log(`owner is ${helper.retrieveOwner(options.owner, username)}`);
+        const repoOwner = helper.retrieveOwner(options.owner, username);
+        const releaseRepo = helper.retrieveReleaseRepo(options.repo);
 
         const { data: release } = await octokit.request('GET /repos/{owner}/{repo}/releases/latest', {
-            owner: username,
-            repo: options.repo
+            owner: repoOwner,
+            repo: releaseRepo
         })
         const latestTagName = release.tag_name;
-        console.log(`latest version is ${latestTagName} on ${options.repo}`);
-
-        // const compare = `${latestTagName}...master`;
         const { data: changeLog } = await octokit.request('GET /repos/{owner}/{repo}/compare/{base}...{head}', {
-            owner: username,
-            repo: options.repo,
+            owner: repoOwner,
+            repo: releaseRepo,
             base: latestTagName,
             head: 'master'
         });
-        // console.log(process.cwd())
-        console.log(`current directory is a git repo: ${helper.isGitRepo()}`);
-        console.log(`current directory path is: ${helper.retrieveCurrentRepoName()}`);
 
-        console.log(`Changelog: ${helper.prepareChangeLog(changeLog)}`)
+        log(chalk.green.underline(`${releaseRepo} changelog for upcoming release:`) + `\n\n${helper.prepareChangeLog(options.body, changeLog)}`);
 
-        try {
-            const { data: newRelease } = await octokit.request('POST /repos/{owner}/{repo}/releases', {
-                owner: username,
-                repo: options.repo,
-                name: helper.releaseName(`${options.releaseName}`),
-                body: helper.prepareChangeLog(changeLog),
-                tag_name: helper.releaseTagName(`${options.tag}`)
-            });
+        if (!options.changelog) {
+            try {
+                const { data: newRelease } = await octokit.request('POST /repos/{owner}/{repo}/releases', {
+                    owner: repoOwner,
+                    repo: releaseRepo,
+                    draft: options.draft,
+                    name: helper.releaseName(options.releaseName),
+                    body: helper.prepareChangeLog(options.body, changeLog),
+                    tag_name: helper.releaseTagName(options.tag)
+                });
 
-            console.log(newRelease.html_url);
+                log(`${newRelease.tag_name} has been created from ${newRelease.target_commitish}. Click the link to check the release ${newRelease.html_url}`);
 
-        } catch (error) {
-            console.log(error);
-            // console.log(error.errors[0].code);
+            } catch (error) {
+                log(error.errors);
+                // console.log(error.errors[0].code);
+            }
         }
 
     } catch (error) {
 
-        console.log(error);
+        log(error);
         // console.log(error.errors);
     }
 }

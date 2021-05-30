@@ -43,11 +43,17 @@ async function run() {
             repo: releaseRepo
         })
         const latestTagName = release.tag_name;
+
+        const { data: branches } = await octokit.request('GET /repos/{owner}/{repo}/branches', {
+            owner: repoOwner,
+            repo: releaseRepo
+        });
+        
         const { data: changeLog } = await octokit.request('GET /repos/{owner}/{repo}/compare/{base}...{head}', {
             owner: repoOwner,
             repo: releaseRepo,
             base: latestTagName,
-            head: 'master'
+            head: helper.retrieveHeadBranch(branches)
         });
 
         log(chalk.green.underline(`${releaseRepo} changelog for upcoming release:`) + `\n\n${helper.prepareChangeLog(options.body, changeLog)}`);

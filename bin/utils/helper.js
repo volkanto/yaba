@@ -82,6 +82,11 @@ module.exports = {
 
     retrieveReleaseRepo: function(repo) {
         return (repo || this.retrieveCurrentRepoName());
+    },
+
+    retrieveHeadBranch: function(branches) {
+        let headBranch = branches.find(branch => branch.name === 'master' || branch.name === 'main');
+        return headBranch.name;
     }
 }
 

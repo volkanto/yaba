@@ -1,6 +1,6 @@
 {
   "name": "yaba-release-cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A simple CLI tool that generates changelog and creates a release on Github.",
   "main": "bin/index.js",
   "scripts": {

@@ -15,5 +15,20 @@
     "chalk": "^4.1.1",
     "octokit": "^1.0.5",
     "yargs": "^17.0.1"
-  }
+  },
+  "keywords": [
+    "github",
+    "github-cli",
+    "github-release",
+    "github-tag",
+    "cli",
+    "release",
+    "tag",
+    "build",
+    "changelog",
+    "yaba",
+    "shell",
+    "publish",
+    "git"
+  ]
 }

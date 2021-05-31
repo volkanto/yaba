@@ -32,7 +32,7 @@ module.exports = {
             if (_month < 10) {
                 _month = `0${_month}`;
             }
-            return `prod_${_year}${_month}${_date}.1`;
+            return `prod_global_${_year}${_month}${_date}.1`;
         }
 
         return tagName;

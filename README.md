@@ -43,7 +43,7 @@ Now, your personal access token is generated. Copy that token and define that on
 export GITHUB_ACCESS_TOKEN=generated_personal_access_token
 ```
 
-You can define that env variable into `~/.bashrc`, `~/.bash_profile` or `~/.zshr` file, choose which one is suitable for you. After defining the env variable, open new terminal or simply run `source ~/.zshrc`(here again choose where you defined your env variable).
+You can define that env variable into `~/.bashrc`, `~/.bash_profile` or `~/.zshrc` file, choose which one is suitable for you. After defining the env variable, open new terminal or simply run `source ~/.zshrc`(here again choose where you defined your env variable).
 
 If the repository owner is another Github account or organisation, you can define that like below instead of passing the owner to the command in every run.
 

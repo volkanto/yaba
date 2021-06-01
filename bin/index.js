@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 
 const yargs = require("yargs");
+const ora = require('ora');
 const { Octokit } = require("octokit");
 const helper = require('./utils/helper.js');
 const pkg = require('../package.json');
 const chalk = require("chalk");
 const log = console.log;
 const error = chalk.bold.red;
+const spinner = ora();
+const isOnline = require('is-online');
 
 const octokit = new Octokit({
     auth: process.env.GITHUB_ACCESS_TOKEN
@@ -15,6 +18,14 @@ const octokit = new Octokit({
 async function run() {
 
     try {
+
+        const isInternetUp = await isOnline();
+        spinner.start('Checking internet connection.');
+        if (!isInternetUp) {
+            spinner.fail('There is no internet connection!');
+            return;
+        }
+        spinner.succeed('Internet connection established');
 
         const options = yargs
             .version(pkg.version)
@@ -38,29 +49,36 @@ async function run() {
         const repoOwner = helper.retrieveOwner(options.owner, username);
         const releaseRepo = helper.retrieveReleaseRepo(options.repo);
 
+        spinner.start('Fetching latest release...');
         const { data: release } = await octokit.request('GET /repos/{owner}/{repo}/releases/latest', {
             owner: repoOwner,
             repo: releaseRepo
         });
+        spinner.succeed(`Latest release is fetched: ${release.tag_name}`);
 
-        const latestTagName = release.tag_name;
-
+        spinner.start('Fetching branch names...');
         const { data: branches } = await octokit.request('GET /repos/{owner}/{repo}/branches', {
             owner: repoOwner,
             repo: releaseRepo
         });
-        
-        
+        spinner.succeed('Branch names are fetched....');
+
+        spinner.start('Preparing the changelog....');
+        const latestTagName = release.tag_name;
         const { data: changeLog } = await octokit.request('GET /repos/{owner}/{repo}/compare/{base}...{head}', {
             owner: repoOwner,
             repo: releaseRepo,
             base: latestTagName,
             head: helper.retrieveHeadBranch(branches)
         });
+        spinner.succeed('Changelog has been prepared...');
 
-        log(chalk.green.underline(`${releaseRepo} changelog for upcoming release:`) + `\n\n${helper.prepareChangeLog(options.body, changeLog)}`);
+        if (options.changelog) {
+            log('\n\n' + chalk.green.underline(`${releaseRepo} changelog for upcoming release:`) + `\n\n${helper.prepareChangeLog(options.body, changeLog)}\n`);
+        }
 
         if (!options.changelog) {
+            spinner.start('Preparing the release...');
             try {
                 const { data: newRelease } = await octokit.request('POST /repos/{owner}/{repo}/releases', {
                     owner: repoOwner,
@@ -71,18 +89,16 @@ async function run() {
                     tag_name: helper.releaseTagName(options.tag)
                 });
 
-                log(`${newRelease.tag_name} has been created from ${newRelease.target_commitish}. Click the link to check the release ${newRelease.html_url}`);
+                spinner.succeed(`Release has been prepared on Github. ${newRelease.html_url}`);
+                // log(`${newRelease.tag_name} has been created from ${newRelease.target_commitish}. Click the link to check the release ${newRelease.html_url}`);
 
             } catch (error) {
-                log(error.errors);
-                // console.log(error.errors[0].code);
+                spinner.fail(`Something went wrong while preparing the release! => ${error.errors}`);
             }
         }
 
     } catch (error) {
-
         log(error);
-        // console.log(error.errors);
     }
 }
 

@@ -6,7 +6,6 @@ const { Octokit } = require("octokit");
 const helper = require('./utils/helper.js');
 const pkg = require('../package.json');
 const chalk = require("chalk");
-const { option } = require("yargs");
 const log = console.log;
 const error = chalk.bold.red;
 const spinner = ora();

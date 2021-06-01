@@ -41,13 +41,15 @@ async function run() {
         const { data: release } = await octokit.request('GET /repos/{owner}/{repo}/releases/latest', {
             owner: repoOwner,
             repo: releaseRepo
-        })
+        });
+
         const latestTagName = release.tag_name;
 
         const { data: branches } = await octokit.request('GET /repos/{owner}/{repo}/branches', {
             owner: repoOwner,
             repo: releaseRepo
         });
+        
         
         const { data: changeLog } = await octokit.request('GET /repos/{owner}/{repo}/compare/{base}...{head}', {
             owner: repoOwner,

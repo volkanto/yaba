@@ -51,7 +51,7 @@ If the repository owner is another Github account or organisation, you can defin
 export GITHUB_REPO_OWNER=repository_owner
 ```
 
-Always `-o` or `--owner` has presedence over authenticated user. Presendence is like `-o > GITHUB_REPO_OWNER > authenticated-user`.
+Always `-o` or `--owner` has precedence over authenticated user. Presendence is like `-o > GITHUB_REPO_OWNER > authenticated-user`.
 
 ## Command Line Usage
 

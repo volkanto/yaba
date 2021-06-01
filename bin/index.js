@@ -10,6 +10,7 @@ const { option } = require("yargs");
 const log = console.log;
 const error = chalk.bold.red;
 const spinner = ora();
+const isOnline = require('is-online');
 
 const octokit = new Octokit({
     auth: process.env.GITHUB_ACCESS_TOKEN
@@ -18,6 +19,14 @@ const octokit = new Octokit({
 async function run() {
 
     try {
+
+        const isInternetUp = await isOnline();
+        spinner.start('Checking internet connection.');
+        if (!isInternetUp) {
+            spinner.fail('There is no internet connection!');
+            return;
+        }
+        spinner.succeed('Internet connection established');
 
         const options = yargs
             .version(pkg.version)
@@ -46,7 +55,7 @@ async function run() {
             owner: repoOwner,
             repo: releaseRepo
         });
-        spinner.succeed('Latest release is fetched...');
+        spinner.succeed(`Latest release is fetched: ${release.tag_name}`);
 
         spinner.start('Fetching branch names...');
         const { data: branches } = await octokit.request('GET /repos/{owner}/{repo}/branches', {

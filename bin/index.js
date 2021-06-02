@@ -19,14 +19,6 @@ async function run() {
 
     try {
 
-        spinner.start('Checking internet connection.');
-        const isInternetUp = await isOnline();
-        if (!isInternetUp) {
-            spinner.fail('There is no internet connection!');
-            return;
-        }
-        spinner.succeed('Internet connection established');
-
         const options = yargs
             .version(pkg.version)
             .usage("Usage: yaba -o <owner> -r <repository> -t <tag> -n <release-name> -b <body> -d <draft> -c")
@@ -43,6 +35,14 @@ async function run() {
             error(`The directory '${helper.retrieveCurrentDirectory()}' is not a Git repo.`);
             return;
         }
+
+        spinner.start('Checking internet connection.');
+        const isInternetUp = await isOnline();
+        if (!isInternetUp) {
+            spinner.fail('There is no internet connection!');
+            return;
+        }
+        spinner.succeed('Internet connection established');
 
         const { data: user } = await octokit.request('GET /user');
         const username = user.login;

@@ -10,6 +10,7 @@ const log = console.log;
 const error = chalk.bold.red;
 const spinner = ora();
 const isOnline = require('is-online');
+const axios = require('axios');
 
 const octokit = new Octokit({
     auth: process.env.GITHUB_ACCESS_TOKEN
@@ -74,8 +75,9 @@ async function run() {
         });
         spinner.succeed('Changelog has been prepared...');
 
+        const preparedChangeLog = helper.prepareChangeLog(options.body, changeLog)
         if (options.changelog) {
-            log('\n\n' + chalk.green.underline(`${releaseRepo} changelog for upcoming release:`) + `\n\n${helper.prepareChangeLog(options.body, changeLog)}\n`);
+            log('\n\n' + chalk.green.underline(`${releaseRepo} changelog for upcoming release:`) + `\n\n${preparedChangeLog}\n`);
         }
 
         if (!options.changelog) {
@@ -86,12 +88,14 @@ async function run() {
                     repo: releaseRepo,
                     draft: options.draft,
                     name: helper.releaseName(options.releaseName),
-                    body: helper.prepareChangeLog(options.body, changeLog),
+                    body: preparedChangeLog,
                     tag_name: helper.releaseTagName(options.tag)
                 });
 
                 spinner.succeed(`Release has been prepared on Github. ${newRelease.html_url}`);
-                // log(`${newRelease.tag_name} has been created from ${newRelease.target_commitish}. Click the link to check the release ${newRelease.html_url}`);
+
+                // publishes the changelog on slack
+                pushToSlack(preparedChangeLog);
 
             } catch (error) {
                 spinner.fail(`Something went wrong while preparing the release! => ${error.errors}`);
@@ -104,3 +108,20 @@ async function run() {
 }
 
 run();
+
+function pushToSlack(message) {
+    spinner.start('Sending release information to Slack channel...');
+    const messsageToPublish = `${releaseRepo} changelog for upcoming release:\n\n${preparedChangeLog}`;
+    axios
+        .post(process.env.SLACK_HOOK_URL, {
+            text: "```" + messsageToPublish + "```"
+        })
+        .then(res => {
+            console.log(`statusCode: ${res.statusCode}`)
+        })
+        .catch(error => {
+            console.error(error)
+        });
+
+    spinner.succeed('Changelog published to Slack.');
+}

@@ -12,6 +12,7 @@
     "yaba": "./bin/index.js"
   },
   "dependencies": {
+    "axios": "^0.21.1",
     "chalk": "^4.1.1",
     "is-online": "^9.0.0",
     "octokit": "^1.0.5",

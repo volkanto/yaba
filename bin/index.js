@@ -19,8 +19,8 @@ async function run() {
 
     try {
 
-        const isInternetUp = await isOnline();
         spinner.start('Checking internet connection.');
+        const isInternetUp = await isOnline();
         if (!isInternetUp) {
             spinner.fail('There is no internet connection!');
             return;
@@ -56,12 +56,13 @@ async function run() {
         });
         spinner.succeed(`Latest release is fetched: ${release.tag_name}`);
 
-        spinner.start('Fetching branch names...');
+        spinner.start('Fetching head branch...');
         const { data: branches } = await octokit.request('GET /repos/{owner}/{repo}/branches', {
             owner: repoOwner,
             repo: releaseRepo
         });
-        spinner.succeed('Branch names are fetched....');
+        const headBranch = helper.retrieveHeadBranch(branches);
+        spinner.succeed(`Head branch is fetched: ${headBranch}`);
 
         spinner.start('Preparing the changelog....');
         const latestTagName = release.tag_name;
@@ -69,7 +70,7 @@ async function run() {
             owner: repoOwner,
             repo: releaseRepo,
             base: latestTagName,
-            head: helper.retrieveHeadBranch(branches)
+            head: headBranch
         });
         spinner.succeed('Changelog has been prepared...');
 

@@ -81,8 +81,9 @@ async function run() {
         }
 
         if (!options.changelog) {
-            spinner.start('Preparing the release...');
+
             try {
+                spinner.start('Preparing the release...');
                 const { data: newRelease } = await octokit.request('POST /repos/{owner}/{repo}/releases', {
                     owner: repoOwner,
                     repo: releaseRepo,
@@ -101,7 +102,6 @@ async function run() {
                 spinner.fail(`Something went wrong while preparing the release! => ${error.errors}`);
             }
         }
-
     } catch (error) {
         log(error);
     }

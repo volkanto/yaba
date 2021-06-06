@@ -47,7 +47,7 @@ module.exports = {
     },
 
     prepareChangeLog: function (givenBody, changeLog) {
-        
+
         if (!this.isBlank(givenBody)) {
             return givenBody;
         }
@@ -71,7 +71,7 @@ module.exports = {
         return this.retrieveCurrentDirectory();
     },
 
-    retrieveCurrentDirectory: function() {
+    retrieveCurrentDirectory: function () {
         const currentFolderPath = process.cwd();
         return currentFolderPath.substring(currentFolderPath.lastIndexOf('/') + 1, currentFolderPath.length);
     },
@@ -80,20 +80,25 @@ module.exports = {
         return (owner || process.env.GITHUB_REPO_OWNER || username);
     },
 
-    retrieveReleaseRepo: function(repo) {
+    retrieveReleaseRepo: function (repo) {
         return (repo || this.retrieveCurrentRepoName());
     },
 
-    retrieveHeadBranch: function(branches) {
+    retrieveHeadBranch: function (branches) {
         let headBranch = branches.find(branch => branch.name === 'master' || branch.name === 'main');
         return headBranch.name;
     },
 
-    requiredEnvVariablesExist: function() {
+    requiredEnvVariablesExist: function () {
         if (process.env.GITHUB_ACCESS_TOKEN) {
             return true;
         }
         return false;
+    },
+
+    getNpmRegistryUrl: function (packageName) {
+        const buildRegistryUrl = (package) => `https://www.npmjs.com/search/suggestions?q=${package}`;
+        return buildRegistryUrl(packageName);
     }
 }
 

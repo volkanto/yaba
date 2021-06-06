@@ -13,9 +13,11 @@
   },
   "dependencies": {
     "chalk": "^4.1.1",
+    "hyperlinker": "^1.0.0",
     "is-online": "^9.0.0",
     "octokit": "^1.0.5",
     "ora": "^5.4.0",
+    "supports-hyperlinks": "^2.2.0",
     "yargs": "^17.0.1"
   },
   "keywords": [

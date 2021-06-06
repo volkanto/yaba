@@ -87,6 +87,13 @@ module.exports = {
     retrieveHeadBranch: function(branches) {
         let headBranch = branches.find(branch => branch.name === 'master' || branch.name === 'main');
         return headBranch.name;
+    },
+
+    requiredEnvVariablesExist: function() {
+        if (process.env.GITHUB_ACCESS_TOKEN) {
+            return true;
+        }
+        return false;
     }
 }
 

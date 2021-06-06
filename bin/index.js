@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 
+// third party lib definitions
 const yargs = require("yargs");
 const ora = require('ora');
 const { Octokit } = require("octokit");
 const helper = require('./utils/helper.js');
 const pkg = require('../package.json');
 const chalk = require("chalk");
-const log = console.log;
-const error = chalk.bold.red;
-const spinner = ora();
 const isOnline = require('is-online');
+const supportsHyperlinks = require('supports-hyperlinks');
+const hyperlinker = require('hyperlinker');
 
+// local variables
+const spinner = ora();
 const octokit = new Octokit({
     auth: process.env.GITHUB_ACCESS_TOKEN
 });
@@ -31,18 +33,26 @@ async function run() {
             .option("c", { alias: "changelog", describe: "Shows only changelog without creating the release.", type: "boolean" })
             .argv;
 
+
+        spinner.start('Checking required ENV variables...');
+        if (helper.requiredEnvVariablesExist() == false) {
+            spinner.fail('The required env variables are not set in order to run the command.');
+            return;
+        }
+        spinner.succeed('Required ENV variables in place.');
+
         if (options.repo == undefined && !helper.isGitRepo()) {
             error(`The directory '${helper.retrieveCurrentDirectory()}' is not a Git repo.`);
             return;
         }
 
-        spinner.start('Checking internet connection.');
+        spinner.start('Checking internet connection...');
         const isInternetUp = await isOnline();
         if (!isInternetUp) {
             spinner.fail('There is no internet connection!');
             return;
         }
-        spinner.succeed('Internet connection established');
+        spinner.succeed('Internet connection established.');
 
         const { data: user } = await octokit.request('GET /user');
         const username = user.login;
@@ -72,10 +82,14 @@ async function run() {
             base: latestTagName,
             head: headBranch
         });
-        spinner.succeed('Changelog has been prepared...');
+        if (changeLog.commits.length != 0) {
+            spinner.succeed('Changelog has been prepared...');
+        } else {
+            spinner.succeed(chalk.yellow.underline('Nothing found to release.'));
+        }
 
-        if (options.changelog) {
-            log('\n\n' + chalk.green.underline(`${releaseRepo} changelog for upcoming release:`) + `\n\n${helper.prepareChangeLog(options.body, changeLog)}\n`);
+        if (changeLog.commits.length != 0 && options.changelog) {
+            console.log('\n\n' + chalk.green.underline(`${releaseRepo} changelog for upcoming release:`) + `\n\n${helper.prepareChangeLog(options.body, changeLog)}\n`);
         }
 
         if (!options.changelog) {
@@ -90,8 +104,13 @@ async function run() {
                     tag_name: helper.releaseTagName(options.tag)
                 });
 
-                spinner.succeed(`Release has been prepared on Github. ${newRelease.html_url}`);
-                // log(`${newRelease.tag_name} has been created from ${newRelease.target_commitish}. Click the link to check the release ${newRelease.html_url}`);
+                let releaseMessage;
+                if (supportsHyperlinks.stdout) {
+                    releaseMessage = hyperlinker('Release has been prepared on Github.', `${newRelease.html_url}`);
+                } else {
+                    releaseMessage = `Release has been prepared on Github. ${newRelease.html_url}`;
+                }
+                spinner.succeed(releaseMessage);
 
             } catch (error) {
                 spinner.fail(`Something went wrong while preparing the release! => ${error.errors}`);
@@ -99,7 +118,7 @@ async function run() {
         }
 
     } catch (error) {
-        log(error);
+        console.log(error);
     }
 }
 

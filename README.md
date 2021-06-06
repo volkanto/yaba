@@ -34,7 +34,7 @@ npm uninstall -g yaba-release-cli
 
 Go to [Personal Access Tokens](https://github.com/settings/tokens) page on Github and generate new token to enable `yaba` CLI to access your repos.
 
-* Give your desired name to your perosonal access token with `Note` section.
+* Give your desired name to your personal access token with `Note` section.
 * Choosing `repo` scope is enough to use `yaba` CLI tool.
 
 Now, your personal access token is generated. Copy that token and define that one as an environment variable:
@@ -93,7 +93,7 @@ By default, if you don't specify `-o`, `-t`, `-n` and `-b` the command will prep
 
 > **IMPORTANT NOTE:** If you don't explicitly define the release as draft with `-d`, `yaba` will directly create the release with given or pre-defined values.
 
-## Local Setup
+## Run Locally
 
 You have to clone the repository to your local machine
 

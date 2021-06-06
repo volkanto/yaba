@@ -10,16 +10,31 @@ const chalk = require("chalk");
 const isOnline = require('is-online');
 const supportsHyperlinks = require('supports-hyperlinks');
 const hyperlinker = require('hyperlinker');
+const axios = require('axios')
+const semver = require('semver');
+const boxen = require('boxen');
 
 // local variables
 const spinner = ora();
 const octokit = new Octokit({
     auth: process.env.GITHUB_ACCESS_TOKEN
 });
+// get local package name and version from package.json (or wherever)
+const package = require('../package.json');
+const packageName = package.name;
+const localVersion = package.version;
 
 async function run() {
 
     try {
+
+        const { data: result } = await axios.get(helper.getNpmRegistryUrl(packageName));
+        const remoteVersion = result[0].version;
+        if (semver.gt(remoteVersion, localVersion)) {
+            const updateCommand = chalk.green('npm update -g yaba-release-cli');
+            const updateMessage = `Yaba has newer version.\nPlease run ${updateCommand} to upgrade Yaba to the latest version.`;
+            console.log(boxen(updateMessage, { padding: 1, align: 'center', borderColor: 'yellow' }));
+        }
 
         const options = yargs
             .version(pkg.version)

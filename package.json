@@ -1,15 +1,18 @@
 {
   "name": "yaba-release-cli",
-  "version": "1.2.0",
+  "version": "1.1.0",
   "description": "Yaba is a simple CLI tool that helps you manage releases of your Github projects.",
   "main": "bin/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Volkan Tokmak",
+  "githubProfile": "https://github.com/volkanto",
   "repository": {
     "type": "git",
-    "url": "https://github.com/volkanto/yaba.git"
+    "url": "https://github.com/volkanto/yaba.git",
+    "user": "volkanto",
+    "name": "yaba"
   },
   "license": "ISC",
   "bin": {

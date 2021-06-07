@@ -2,42 +2,24 @@
 
 // third party lib definitions
 const yargs = require("yargs");
-const ora = require('ora');
-const { Octokit } = require("octokit");
-const helper = require('./utils/helper.js');
 const pkg = require('../package.json');
 const chalk = require("chalk");
-const isOnline = require('is-online');
-const supportsHyperlinks = require('supports-hyperlinks');
-const hyperlinker = require('hyperlinker');
-const axios = require('axios')
-const semver = require('semver');
-const boxen = require('boxen');
 
 // local variables
-const spinner = ora();
-const octokit = new Octokit({
-    auth: process.env.GITHUB_ACCESS_TOKEN
-});
-// get local package name and version from package.json (or wherever)
 const package = require('../package.json');
-const packageName = package.name;
-const localVersion = package.version;
+const helper = require('./utils/helper.js');
+const tool = require('./utils/tool.js');
+const flow = require('./utils/flow.js');
 
 async function run() {
 
     try {
 
-        const { data: result } = await axios.get(helper.getNpmRegistryUrl(packageName));
-        const remoteVersion = result[0].version;
-        if (semver.gt(remoteVersion, localVersion)) {
-            const updateCommand = chalk.green('npm update -g yaba-release-cli');
-            const updateMessage = `Yaba has newer version.\nPlease run ${updateCommand} to upgrade Yaba to the latest version.`;
-            console.log(boxen(updateMessage, { padding: 1, align: 'center', borderColor: 'yellow' }));
-        }
+        // check if the yaba cli has newer version
+        await tool.checkUpdate();
 
+        // yaba commands
         const options = yargs
-            .version(pkg.version)
             .usage("Usage: yaba -o <owner> -r <repository> -t <tag> -n <release-name> -b <body> -d <draft> -c")
             .option("o", { alias: "owner", describe: "The repository owner.", type: "string" })
             .option("r", { alias: "repo", describe: "The repository name.", type: "string" })
@@ -46,90 +28,47 @@ async function run() {
             .option("b", { alias: "body", describe: "Text describing the contents of the tag. If not provided, the default changelog will be generated with the usage of the difference of master and latest release.", type: "string" })
             .option("d", { alias: "draft", describe: "`true` or only using `-d` makes the release a draft.", type: "boolean" })
             .option("c", { alias: "changelog", describe: "Shows only changelog without creating the release.", type: "boolean" })
+            .epilog(`Copyleft ${new Date().getFullYear()} ${package.author} - ${package.githubProfile}`)
+            .alias('h', 'help')
+            .help('help')
+            .alias('v', 'version')
+            .version(pkg.version)
             .argv;
 
 
-        spinner.start('Checking required ENV variables...');
-        if (helper.requiredEnvVariablesExist() == false) {
-            spinner.fail('The required env variables are not set in order to run the command.');
-            return;
-        }
-        spinner.succeed('Required ENV variables in place.');
+        // check required ENV variables
+        flow.checkRequiredEnvVariables();
 
+        // check if the current directory is git repo
         if (options.repo == undefined && !helper.isGitRepo()) {
             error(`The directory '${helper.retrieveCurrentDirectory()}' is not a Git repo.`);
             return;
         }
 
-        spinner.start('Checking internet connection...');
-        const isInternetUp = await isOnline();
-        if (!isInternetUp) {
-            spinner.fail('There is no internet connection!');
-            return;
-        }
-        spinner.succeed('Internet connection established.');
+        // check internet connection
+        await flow.checkInternetConnection();
 
-        const { data: user } = await octokit.request('GET /user');
-        const username = user.login;
-        const repoOwner = helper.retrieveOwner(options.owner, username);
+        const user = await flow.getAuthenticatedUser();
+        const repoOwner = helper.retrieveOwner(options.owner, user.login);
         const releaseRepo = helper.retrieveReleaseRepo(options.repo);
 
-        spinner.start('Fetching latest release...');
-        const { data: release } = await octokit.request('GET /repos/{owner}/{repo}/releases/latest', {
-            owner: repoOwner,
-            repo: releaseRepo
-        });
-        spinner.succeed(`Latest release is fetched: ${release.tag_name}`);
+        // fetch latest release
+        const latestRelease = await flow.fetchLatestRelease(repoOwner, releaseRepo);
 
-        spinner.start('Fetching head branch...');
-        const { data: branches } = await octokit.request('GET /repos/{owner}/{repo}/branches', {
-            owner: repoOwner,
-            repo: releaseRepo
-        });
-        const headBranch = helper.retrieveHeadBranch(branches);
-        spinner.succeed(`Head branch is fetched: ${headBranch}`);
+        // fetch head branch
+        const headBranch = await flow.fetchHeadBranch(repoOwner, releaseRepo);
 
-        spinner.start('Preparing the changelog....');
-        const latestTagName = release.tag_name;
-        const { data: changeLog } = await octokit.request('GET /repos/{owner}/{repo}/compare/{base}...{head}', {
-            owner: repoOwner,
-            repo: releaseRepo,
-            base: latestTagName,
-            head: headBranch
-        });
-        if (changeLog.commits.length != 0) {
-            spinner.succeed('Changelog has been prepared...');
-        } else {
-            spinner.succeed(chalk.yellow.underline('Nothing found to release.'));
-        }
+        // prepare changelog
+        const changeLog = await flow.prepareChangelog(repoOwner, releaseRepo, latestRelease.tag_name, headBranch);
 
+        // show only changelog
         if (changeLog.commits.length != 0 && options.changelog) {
             console.log('\n\n' + chalk.green.underline(`${releaseRepo} changelog for upcoming release:`) + `\n\n${helper.prepareChangeLog(options.body, changeLog)}\n`);
         }
 
-        if (!options.changelog) {
-            spinner.start('Preparing the release...');
-            try {
-                const { data: newRelease } = await octokit.request('POST /repos/{owner}/{repo}/releases', {
-                    owner: repoOwner,
-                    repo: releaseRepo,
-                    draft: options.draft,
-                    name: helper.releaseName(options.releaseName),
-                    body: helper.prepareChangeLog(options.body, changeLog),
-                    tag_name: helper.releaseTagName(options.tag)
-                });
-
-                let releaseMessage;
-                if (supportsHyperlinks.stdout) {
-                    releaseMessage = hyperlinker('Release has been prepared on Github.', `${newRelease.html_url}`);
-                } else {
-                    releaseMessage = `Release has been prepared on Github. ${newRelease.html_url}`;
-                }
-                spinner.succeed(releaseMessage);
-
-            } catch (error) {
-                spinner.fail(`Something went wrong while preparing the release! => ${error.errors}`);
-            }
+        // create the release
+        if (changeLog.commits.length != 0 && !options.changelog) {
+            await flow.createRelease(repoOwner, releaseRepo, options.draft, options.releaseName, helper.prepareChangeLog(options.body, changeLog), options.tag);
         }
 
     } catch (error) {

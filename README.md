@@ -126,7 +126,3 @@ You can create an issue if you find any problem or feel free to create a PR with
 ## Authors
 
 * Volkan Tokmak - [volkanto](https://github.com/volkanto)
-
-## LICENCE
-
-ISC

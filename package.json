@@ -14,6 +14,9 @@
     "user": "volkanto",
     "name": "yaba"
   },
+  "bugs": {
+    "url": "https://github.com/volkanto/yaba/issues"
+  },
   "license": "MIT",
   "bin": {
     "yaba": "./bin/index.js"

@@ -2,7 +2,7 @@
 
 [![NPM](https://nodei.co/npm/yaba-release-cli.png?downloads=true&stars=true)](https://www.npmjs.com/package/yaba-release-cli)
 
-**Yaba** is a simple CLI tool that helps you manage releases of your Github projects.
+**Yaba** is a simple CLI tool that helps you manage releases of your GitHub projects.
 
 ## Prerequisites
 
@@ -32,7 +32,7 @@ npm uninstall -g yaba-release-cli
 
 ### Create Personal Access Token
 
-Go to [Personal Access Tokens](https://github.com/settings/tokens) page on Github and generate new token to
+Go to [Personal Access Tokens](https://github.com/settings/tokens) page on GitHub and generate new token to
 enable `yaba` CLI to access your repos.
 
 * Give your desired name to your personal access token with `Note` section.
@@ -48,7 +48,7 @@ You can define that env variable into `~/.bashrc`, `~/.bash_profile` or `~/.zshr
 for you. After defining the env variable, open new terminal or simply run `source ~/.zshrc`(here again choose where you
 defined your env variable).
 
-If the repository owner is another Github account or organisation, you can define that like below instead of passing the
+If the repository owner is another GitHub account or organisation, you can define that like below instead of passing the
 owner to the command in every run.
 
 ```shell

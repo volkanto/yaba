@@ -30,7 +30,7 @@ npm uninstall -g yaba-release-cli
 
 ## Setup
 
-### Create a Personal Access Token
+### Create Personal Access Token
 
 Go to [Personal Access Tokens](https://github.com/settings/tokens) page on Github and generate new token to
 enable `yaba` CLI to access your repos.

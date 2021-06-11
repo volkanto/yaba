@@ -14,7 +14,7 @@
     "user": "volkanto",
     "name": "yaba"
   },
-  "license": "ISC",
+  "license": "MIT",
   "bin": {
     "yaba": "./bin/index.js"
   },

@@ -1,4 +1,5 @@
 const fs = require("fs");
+const prompts = require('prompts');
 
 module.exports = {
     releaseDate: function () {
@@ -99,6 +100,22 @@ module.exports = {
     getNpmRegistryUrl: function (packageName) {
         const buildRegistryUrl = (package) => `https://www.npmjs.com/search/suggestions?q=${package}`;
         return buildRegistryUrl(packageName);
+    },
+
+    releaseCreatePermit: async function (interactive) {
+
+        if (interactive == false) {
+            return true;
+        }
+
+        const response = await prompts({
+            type: 'confirm',
+            name: 'create',
+            message: 'Are you sure to create the release?',
+            initial: false
+        });
+
+        return response.create;
     }
 }
 

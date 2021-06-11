@@ -63,8 +63,6 @@ Usage: yaba -o <owner> -r <repository> -t <tag> -n <release-name> -b <body> -d
 <draft> -c
 
 Options:
-      --help          Show help                                        [boolean]
-      --version       Show version number                              [boolean]
   -o, --owner         The repository owner.                             [string]
   -r, --repo          The repository name.                              [string]
   -t, --tag           The name of the tag.                              [string]
@@ -76,6 +74,8 @@ Options:
                                                                        [boolean]
   -c, --changelog     Shows only changelog without creating the release.
                                                                        [boolean]
+  -h, --help          Show help                                        [boolean]
+  -v, --version       Show version number                              [boolean]
 ```
 
 You can run `yaba` from a git directory or any other directories which is not a git repo.

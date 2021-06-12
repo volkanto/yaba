@@ -54,10 +54,12 @@ module.exports = {
         }
 
         let releaseMessage = "";
-        changeLog.commits.forEach(change => {
-            let message = change.commit.message.split('\n')[0];
+        // FIXME: there should be a better way
+        changeLog.forEach(commit => {
+            let message = commit.split('\n')[0];
             releaseMessage += `* ${message}\n`;
         });
+
         return this.isBlank(releaseMessage) ? "* No changes" : releaseMessage;
     },
 
@@ -87,7 +89,7 @@ module.exports = {
 
     retrieveHeadBranch: function (branches) {
         let headBranch = branches.find(branch => branch.name === 'master' || branch.name === 'main');
-        return headBranch.name;
+        return headBranch == undefined ? null : headBranch.name;
     },
 
     requiredEnvVariablesExist: function () {

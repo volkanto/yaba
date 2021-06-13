@@ -80,6 +80,7 @@ Options:
                                                                        [boolean]
   -i, --interactive   Prompt before (draft) release is created (default true)
                                                                        [boolean]
+  -s, --sound         Play sound when the release created              [boolean]
   -h, --help          Show help                                        [boolean]
   -v, --version       Show version number                              [boolean]
 ```

@@ -1,5 +1,7 @@
 const fs = require("fs");
 const prompts = require('prompts');
+const player = require('play-sound')(opts = {})
+const path = require("path");
 
 module.exports = {
     releaseDate: function () {
@@ -118,6 +120,13 @@ module.exports = {
         });
 
         return response.create;
+    },
+
+    playSound: function (sound) {
+        if (sound == true) {
+            const filePath = path.join(__dirname, "../assets/yaba.mp3");
+            player.play(filePath);
+        }
     }
 }
 

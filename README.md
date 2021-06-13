@@ -1,4 +1,4 @@
-# Yaba Github Release CLI
+# Yaba GitHub Release CLI
 
 [![NPM](https://nodei.co/npm/yaba-release-cli.png?downloads=true&stars=true)](https://www.npmjs.com/package/yaba-release-cli)
 

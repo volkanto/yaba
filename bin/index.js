@@ -46,6 +46,11 @@ async function run() {
                 describe: "Prompt before (draft) release is created (default true)",
                 type: "boolean"
             })
+            .option("s", {
+                alias: "sound",
+                describe: "Play sound when the release created",
+                type: "boolean"
+            })
             .epilog(`Copyleft ${new Date().getFullYear()} ${package.author} - ${package.githubProfile}`)
             .alias('h', 'help')
             .help('help')
@@ -96,6 +101,7 @@ async function run() {
             const isPermitted = await helper.releaseCreatePermit(options.interactive);
             if (isPermitted) {
                 await flow.createRelease(repoOwner, releaseRepo, options.draft, options.releaseName, helper.prepareChangeLog(options.body, changeLog), options.tag);
+                helper.playSound(options.sound);
             } else {
                 console.log('Release was not prepared!');
             }

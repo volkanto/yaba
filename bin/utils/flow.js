@@ -33,12 +33,17 @@ module.exports = {
 
     fetchLatestRelease: async function (owner, repo) {
         spinner.start('Fetching latest release...');
-        const { data: release } = await octokit.request('GET /repos/{owner}/{repo}/releases/latest', {
-            owner: owner,
-            repo: repo
-        });
-        spinner.succeed(`Latest release is fetched: ${release.tag_name}`);
-        return release;
+        try {
+            const { data: release } = await octokit.request('GET /repos/{owner}/{repo}/releases/latest', {
+                owner: owner,
+                repo: repo
+            });
+            spinner.succeed(`Latest release is fetched: ${release.tag_name}`);
+            return release;
+        } catch (error) {
+            spinner.warn(`Latest release not found.`);
+            return null;
+        }
     },
 
     fetchHeadBranch: async function (owner, repo) {
@@ -65,7 +70,24 @@ module.exports = {
         } else {
             spinner.succeed(chalk.yellow.underline('Nothing found to release.'));
         }
-        return changeLog;
+
+        return changeLog.commits.map(item => {
+            return item.commit.message;
+        });
+    },
+
+    listCommits: async function (owner, repo, head) {
+        spinner.start(`Fetching commits from ${head} branch...`);
+        const { data: commits } = await octokit.request('GET /repos/{owner}/{repo}/commits', {
+            owner: owner,
+            repo: repo
+        });
+        spinner.succeed('Commits have been fetched...');
+
+        // return commits;
+        return commits.map(item => {
+            return item.commit.message;
+        });
     },
 
     createRelease: async function (owner, repo, draft, name, body, tag_name) {

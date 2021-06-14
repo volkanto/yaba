@@ -8,7 +8,7 @@ const chalk = require("chalk");
 const helper = require('./utils/helper.js');
 const tool = require('./utils/tool.js');
 const flow = require('./utils/flow.js');
-const options = require('./utils/command.js');
+const options = require('./utils/command.js').options;
 
 async function run() {
 
@@ -50,6 +50,7 @@ async function run() {
             ? await flow.listCommits(repoOwner, releaseRepo, headBranch)
             : await flow.prepareChangelog(repoOwner, releaseRepo, latestRelease.tag_name, headBranch);
 
+        console.log(options);
         // show only changelog
         if (changeLog.length != 0 && options.changelog) {
             console.log('\n\n' + chalk.green.underline(`${releaseRepo} changelog for upcoming release:`) + `\n\n${helper.prepareChangeLog(options.body, changeLog)}\n`);

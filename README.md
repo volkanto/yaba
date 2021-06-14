@@ -1,4 +1,4 @@
-# Yaba Github Release CLI
+# Yaba GitHub Release CLI
 
 [![NPM](https://nodei.co/npm/yaba-release-cli.png?downloads=true&stars=true)](https://www.npmjs.com/package/yaba-release-cli)
 
@@ -80,6 +80,7 @@ Options:
                                                                        [boolean]
   -i, --interactive   Prompt before (draft) release is created (default true)
                                                                        [boolean]
+  -s, --sound         Play sound when the release created              [boolean]
   -h, --help          Show help                                        [boolean]
   -v, --version       Show version number                              [boolean]
 ```

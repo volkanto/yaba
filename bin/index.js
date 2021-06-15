@@ -2,7 +2,7 @@
 
 // third party lib definitions
 const yargs = require("yargs");
-const chalk = require("chalk");
+const kleur = require("kleur");
 
 // local variables
 const helper = require('./utils/helper.js');
@@ -30,8 +30,8 @@ async function run() {
         // check internet connection
         await flow.checkInternetConnection();
 
-        const user = await flow.getAuthenticatedUser();
-        const repoOwner = helper.retrieveOwner(options.owner, user.login);
+        const username = await flow.retrieveUsername();
+        const repoOwner = helper.retrieveOwner(options.owner, username);
         const releaseRepo = helper.retrieveReleaseRepo(options.repo);
 
         // fetch latest release
@@ -41,7 +41,7 @@ async function run() {
         const headBranch = await flow.fetchHeadBranch(repoOwner, releaseRepo);
 
         if (headBranch == null) {
-            console.log(chalk.red("Head branch can not be found! The release has been interrupted!"));
+            console.log(kleur.red("Head branch can not be found! The release has been interrupted!"));
             return;
         }
 
@@ -52,7 +52,7 @@ async function run() {
 
         // show only changelog
         if (changeLog.length != 0 && options.changelog) {
-            console.log('\n\n' + chalk.green.underline(`${releaseRepo} changelog for upcoming release:`) + `\n\n${helper.prepareChangeLog(options.body, changeLog)}\n`);
+            console.log('\n\n' + kleur.green().underline(`${releaseRepo} changelog for upcoming release:`) + `\n\n${helper.prepareChangeLog(options.body, changeLog)}\n`);
         }
 
         // create the release

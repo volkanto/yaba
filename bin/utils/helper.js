@@ -5,36 +5,17 @@ const path = require("path");
 
 module.exports = {
     releaseDate: function () {
-        let today = new Date();
-        let _date = today.getDate();
-
-        let _month = today.getMonth() + 1;
-        const _year = today.getFullYear();
-        if (_date < 10) {
-            _date = `0${_date}`;
-        }
-
-        if (_month < 10) {
-            _month = `0${_month}`;
-        }
-        return `${_year}-${_month}-${_date}`;
+        const currentDate = retrieveCurrentDate();
+        return `${currentDate[0]}-${currentDate[1]}-${currentDate[2]}`;
     },
 
     releaseTagName: function (tagName) {
 
         if (this.isBlank(tagName)) {
-            let today = new Date();
-            let _date = today.getDate();
-
-            let _month = today.getMonth() + 1;
-            const _year = today.getFullYear();
-            if (_date < 10) {
-                _date = `0${_date}`;
-            }
-
-            if (_month < 10) {
-                _month = `0${_month}`;
-            }
+            const currentDate = retrieveCurrentDate();
+            const _year = currentDate[0];
+            const _month = currentDate[1];
+            const _date= currentDate[2];
             return `prod_global_${_year}${_month}${_date}.1`;
         }
 
@@ -101,11 +82,6 @@ module.exports = {
         return false;
     },
 
-    getNpmRegistryUrl: function (packageName) {
-        const buildRegistryUrl = (package) => `https://www.npmjs.com/search/suggestions?q=${package}`;
-        return buildRegistryUrl(packageName);
-    },
-
     releaseCreatePermit: async function (interactive) {
 
         if (interactive == false) {
@@ -128,5 +104,22 @@ module.exports = {
             player.play(filePath);
         }
     }
+}
+
+function retrieveCurrentDate() {
+    let today = new Date();
+    let _date = today.getDate();
+
+    let _month = today.getMonth() + 1;
+    const _year = today.getFullYear();
+    if (_date < 10) {
+        _date = `0${_date}`;
+    }
+
+    if (_month < 10) {
+        _month = `0${_month}`;
+    }
+
+    return [_year, _month, _date];
 }
 

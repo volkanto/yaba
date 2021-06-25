@@ -2,21 +2,18 @@ const fs = require("fs");
 const prompts = require('prompts');
 const player = require('play-sound')(opts = {})
 const path = require("path");
+const { format } = require('date-fns')
 
 module.exports = {
     releaseDate: function () {
-        const currentDate = retrieveCurrentDate();
-        return `${currentDate[0]}-${currentDate[1]}-${currentDate[2]}`;
+        return format(new Date(), 'yyyy-MM-dd');
     },
 
     releaseTagName: function (tagName) {
 
         if (this.isBlank(tagName)) {
-            const currentDate = retrieveCurrentDate();
-            const _year = currentDate[0];
-            const _month = currentDate[1];
-            const _date= currentDate[2];
-            return `prod_global_${_year}${_month}${_date}.1`;
+            const currentDate = format(new Date(), 'yyyyMMdd');
+            return `prod_global_${currentDate}.1`;
         }
 
         return tagName;
@@ -105,21 +102,3 @@ module.exports = {
         }
     }
 }
-
-function retrieveCurrentDate() {
-    let today = new Date();
-    let _date = today.getDate();
-
-    let _month = today.getMonth() + 1;
-    const _year = today.getFullYear();
-    if (_date < 10) {
-        _date = `0${_date}`;
-    }
-
-    if (_month < 10) {
-        _month = `0${_month}`;
-    }
-
-    return [_year, _month, _date];
-}
-

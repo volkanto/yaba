@@ -24,6 +24,7 @@
   "dependencies": {
     "axios": "^0.21.1",
     "boxen": "^5.0.1",
+    "date-fns": "^2.22.1",
     "hyperlinker": "^1.0.0",
     "is-online": "^9.0.0",
     "kleur": "^4.1.4",

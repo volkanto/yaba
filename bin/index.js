@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 // third party lib definitions
-const yargs = require("yargs");
 const kleur = require("kleur");
 
 // local variables

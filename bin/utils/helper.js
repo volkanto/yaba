@@ -12,7 +12,7 @@ module.exports = {
     releaseTagName: function (tagName) {
 
         if (this.isBlank(tagName)) {
-            const currentDate= format(new Date(), 'yyyyMMdd');
+            const currentDate = format(new Date(), 'yyyyMMdd');
             return `prod_global_${currentDate}.1`;
         }
 

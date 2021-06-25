@@ -4,10 +4,10 @@ const package = require('../../package.json');
 const commands = yargs
     .usage("Usage: yaba -o <owner> -r <repository> -t <tag> -n <release-name> -b <body> -d <draft> " +
         "-c <changelog> -i <interactive> -s <sound>")
-    .option("o", {alias: "owner", describe: "The repository owner.", type: "string"})
-    .option("r", {alias: "repo", describe: "The repository name.", type: "string"})
-    .option("t", {alias: "tag", describe: "The name of the tag.", type: "string"})
-    .option("n", {alias: "release-name", describe: "The name of the release.", type: "string"})
+    .option("o", { alias: "owner", describe: "The repository owner.", type: "string" })
+    .option("r", { alias: "repo", describe: "The repository name.", type: "string" })
+    .option("t", { alias: "tag", describe: "The name of the tag.", type: "string" })
+    .option("n", { alias: "release-name", describe: "The name of the release.", type: "string" })
     .option("b", {
         alias: "body",
         describe: "Text describing the contents of the tag. If not provided, the default changelog " +

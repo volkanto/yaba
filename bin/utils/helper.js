@@ -1,38 +1,19 @@
 const fs = require("fs");
+const prompts = require('prompts');
+const player = require('play-sound')(opts = {})
+const path = require("path");
+const { format } = require('date-fns')
 
 module.exports = {
     releaseDate: function () {
-        let today = new Date();
-        let _date = today.getDate();
-
-        let _month = today.getMonth() + 1;
-        const _year = today.getFullYear();
-        if (_date < 10) {
-            _date = `0${_date}`;
-        }
-
-        if (_month < 10) {
-            _month = `0${_month}`;
-        }
-        return `${_year}-${_month}-${_date}`;
+        return format(new Date(), 'yyyy-MM-dd');
     },
 
     releaseTagName: function (tagName) {
 
         if (this.isBlank(tagName)) {
-            let today = new Date();
-            let _date = today.getDate();
-
-            let _month = today.getMonth() + 1;
-            const _year = today.getFullYear();
-            if (_date < 10) {
-                _date = `0${_date}`;
-            }
-
-            if (_month < 10) {
-                _month = `0${_month}`;
-            }
-            return `prod_global_${_year}${_month}${_date}.1`;
+            const currentDate = format(new Date(), 'yyyyMMdd');
+            return `prod_global_${currentDate}.1`;
         }
 
         return tagName;
@@ -47,16 +28,18 @@ module.exports = {
     },
 
     prepareChangeLog: function (givenBody, changeLog) {
-        
+
         if (!this.isBlank(givenBody)) {
             return givenBody;
         }
 
         let releaseMessage = "";
-        changeLog.commits.forEach(change => {
-            let message = change.commit.message.split('\n')[0];
+        // FIXME: there should be a better way
+        changeLog.forEach(commit => {
+            let message = commit.split('\n')[0];
             releaseMessage += `* ${message}\n`;
         });
+
         return this.isBlank(releaseMessage) ? "* No changes" : releaseMessage;
     },
 
@@ -71,7 +54,7 @@ module.exports = {
         return this.retrieveCurrentDirectory();
     },
 
-    retrieveCurrentDirectory: function() {
+    retrieveCurrentDirectory: function () {
         const currentFolderPath = process.cwd();
         return currentFolderPath.substring(currentFolderPath.lastIndexOf('/') + 1, currentFolderPath.length);
     },
@@ -80,13 +63,42 @@ module.exports = {
         return (owner || process.env.GITHUB_REPO_OWNER || username);
     },
 
-    retrieveReleaseRepo: function(repo) {
+    retrieveReleaseRepo: function (repo) {
         return (repo || this.retrieveCurrentRepoName());
     },
 
-    retrieveHeadBranch: function(branches) {
+    retrieveHeadBranch: function (branches) {
         let headBranch = branches.find(branch => branch.name === 'master' || branch.name === 'main');
-        return headBranch.name;
+        return headBranch == undefined ? null : headBranch.name;
+    },
+
+    requiredEnvVariablesExist: function () {
+        if (process.env.GITHUB_ACCESS_TOKEN) {
+            return true;
+        }
+        return false;
+    },
+
+    releaseCreatePermit: async function (interactive) {
+
+        if (interactive == false) {
+            return true;
+        }
+
+        const response = await prompts({
+            type: 'confirm',
+            name: 'create',
+            message: 'Are you sure to create the release?',
+            initial: false
+        });
+
+        return response.create;
+    },
+
+    playSound: function (sound) {
+        if (sound == true) {
+            const filePath = path.join(__dirname, "../assets/yaba.mp3");
+            player.play(filePath);
+        }
     }
 }
-

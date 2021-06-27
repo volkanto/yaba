@@ -3,7 +3,7 @@ const package = require('../../package.json');
 
 const commands = yargs
     .usage("Usage: yaba -o <owner> -r <repository> -t <tag> -n <release-name> -b <body> -d <draft> " +
-        "-c <changelog> -i <interactive> -s <sound>")
+        "-c <changelog> -i <interactive> -s <sound> -p <publish>")
     .option("o", { alias: "owner", describe: "The repository owner.", type: "string" })
     .option("r", { alias: "repo", describe: "The repository name.", type: "string" })
     .option("t", { alias: "tag", describe: "The name of the tag.", type: "string" })
@@ -39,7 +39,6 @@ const commands = yargs
         describe: "Publishes the release announcement to the defined Slack channel",
         type: "boolean"
     })
-    .epilog(`Copyleft ${new Date().getFullYear()} ${package.author} - ${package.githubProfile}`)
     .alias('h', 'help')
     .help('help')
     .alias('v', 'version')

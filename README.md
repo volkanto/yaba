@@ -58,6 +58,23 @@ export GITHUB_REPO_OWNER=repository_owner
 Always `-o` or `--owner` has precedence over authenticated user. Presendence is
 like `-o > GITHUB_REPO_OWNER > authenticated-user`.
 
+### Slack Integration
+
+If you want to announce your release/changelog to the specific Slack channel, you have to define below environment
+variable with the appropriate value.
+
+```shell
+export SLACK_HOOK_URL=your_slack_hook_url
+```
+
+If the above variable is set and the `-p` command given while running the command, an announcement will be post to the
+given Slack channel. You can find detailed information in the [Command Line Usage](#command-line-usage) section.
+
+e.g.
+```shell
+yaba -p
+```
+
 ## Command Line Usage
 
 Run `yaba` with `--help` options:
@@ -65,7 +82,7 @@ Run `yaba` with `--help` options:
 ```shell
 ➜  ~ yaba --help
 Usage: yaba -o <owner> -r <repository> -t <tag> -n <release-name> -b <body> -d
-<draft> -c
+<draft> -c <changelog> -i <interactive> -s <sound> -p <publish>
 
 Options:
   -o, --owner         The repository owner.                             [string]
@@ -81,6 +98,8 @@ Options:
   -i, --interactive   Prompt before (draft) release is created (default true)
                                                                        [boolean]
   -s, --sound         Play sound when the release created              [boolean]
+  -p, --publish       Publishes the release announcement to the defined Slack
+                      channel                                          [boolean]
   -h, --help          Show help                                        [boolean]
   -v, --version       Show version number                              [boolean]
 ```

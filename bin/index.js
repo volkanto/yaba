@@ -58,8 +58,13 @@ async function run() {
         if (changeLog.length != 0 && !options.changelog) {
             const isPermitted = await helper.releaseCreatePermit(options.interactive);
             if (isPermitted) {
-                await flow.createRelease(repoOwner, releaseRepo, options.draft, options.releaseName, helper.prepareChangeLog(options.body, changeLog), options.tag);
+                let preparedChangeLog = helper.prepareChangeLog(options.body, changeLog);
+                await flow.createRelease(repoOwner, releaseRepo, options.draft, options.releaseName, preparedChangeLog, options.tag);
                 helper.playSound(options.sound);
+
+                // publishes the changelog on slack
+                flow.publishToSlack(options.publish, releaseRepo, preparedChangeLog);
+
             } else {
                 console.log('Release was not prepared!');
             }

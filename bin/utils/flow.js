@@ -5,6 +5,7 @@ const ora = require('ora');
 const spinner = ora();
 const helper = require('./helper.js');
 const kleur = require('kleur');
+const axios = require('axios');
 const octokit = new Octokit({
     auth: process.env.GITHUB_ACCESS_TOKEN
 });
@@ -91,8 +92,10 @@ module.exports = {
     },
 
     createRelease: async function (owner, repo, draft, name, body, tag_name) {
-        spinner.start('Preparing the release...');
+
         try {
+            spinner.start('Preparing the release...');
+
             const {data: newRelease} = await octokit.request('POST /repos/{owner}/{repo}/releases', {
                 owner: owner,
                 repo: repo,
@@ -102,8 +105,8 @@ module.exports = {
                 tag_name: helper.releaseTagName(tag_name)
             });
 
-            const releaseMessage = prepareReleaseMessage(newRelease.html_url);
-            spinner.succeed(releaseMessage);
+            const releaseUrl = prepareReleaseUrl(newRelease.html_url);
+            spinner.succeed(`Release has been prepared on Github. ${releaseUrl}`);
 
         } catch (error) {
             let errorMessage = "\n";
@@ -117,15 +120,37 @@ module.exports = {
     retrieveUsername: async function () {
         const {data: user} = await octokit.request('GET /user');
         return user.login;
+    },
+
+    publishToSlack: function (publish, repo, message) {
+
+        if (publish == true) {
+
+            spinner.start('Sending release information to Slack channel...');
+
+            let slackHookUrl = process.env.SLACK_HOOK_URL;
+            if (!slackHookUrl) {
+                spinner.fail("Release not announced on Slack: configuration not found!");
+                return;
+            }
+
+            axios
+                .post(process.env.SLACK_HOOK_URL, {
+                    text: repo + " changelog for upcoming release:\n\n```\n" + message + "```"
+                })
+                .catch(error => {
+                    spinner.fail(`Something went wrong while sending to Slack channel: ${error}`)
+                });
+
+            spinner.succeed('Changelog published to Slack.');
+        }
     }
 }
 
-function prepareReleaseMessage(releaseUrl) {
-
-    const baseMessage = "Release has been prepared on Github.";
+function prepareReleaseUrl(releaseUrl) {
 
     if (supportsHyperlinks.stdout) {
-        return hyperlinker(`${baseMessage} ${kleur.blue().bold().underline(releaseUrl)}`);
+        return hyperlinker(`${kleur.blue().bold().underline(releaseUrl)}`);
     }
-    return `${baseMessage} ${releaseUrl}`;
+    return `${releaseUrl}`;
 }

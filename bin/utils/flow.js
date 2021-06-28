@@ -1,4 +1,4 @@
-const {Octokit} = require("octokit");
+const { Octokit } = require("octokit");
 const supportsHyperlinks = require('supports-hyperlinks');
 const isOnline = require('is-online');
 const ora = require('ora');
@@ -35,7 +35,7 @@ module.exports = {
     fetchLatestRelease: async function (owner, repo) {
         spinner.start('Fetching latest release...');
         try {
-            const {data: release} = await octokit.request('GET /repos/{owner}/{repo}/releases/latest', {
+            const { data: release } = await octokit.request('GET /repos/{owner}/{repo}/releases/latest', {
                 owner: owner,
                 repo: repo
             });
@@ -49,7 +49,7 @@ module.exports = {
 
     fetchHeadBranch: async function (owner, repo) {
         spinner.start('Fetching head branch...');
-        const {data: branches} = await octokit.request('GET /repos/{owner}/{repo}/branches', {
+        const { data: branches } = await octokit.request('GET /repos/{owner}/{repo}/branches', {
             owner: owner,
             repo: repo
         });
@@ -60,7 +60,7 @@ module.exports = {
 
     prepareChangelog: async function (owner, repo, base, head) {
         spinner.start('Preparing the changelog....');
-        const {data: changeLog} = await octokit.request('GET /repos/{owner}/{repo}/compare/{base}...{head}', {
+        const { data: changeLog } = await octokit.request('GET /repos/{owner}/{repo}/compare/{base}...{head}', {
             owner: owner,
             repo: repo,
             base: base,
@@ -79,7 +79,7 @@ module.exports = {
 
     listCommits: async function (owner, repo, head) {
         spinner.start(`Fetching commits from ${head} branch...`);
-        const {data: commits} = await octokit.request('GET /repos/{owner}/{repo}/commits', {
+        const { data: commits } = await octokit.request('GET /repos/{owner}/{repo}/commits', {
             owner: owner,
             repo: repo
         });
@@ -96,7 +96,7 @@ module.exports = {
         try {
             spinner.start('Preparing the release...');
 
-            const {data: newRelease} = await octokit.request('POST /repos/{owner}/{repo}/releases', {
+            const { data: newRelease } = await octokit.request('POST /repos/{owner}/{repo}/releases', {
                 owner: owner,
                 repo: repo,
                 draft: draft,
@@ -118,7 +118,7 @@ module.exports = {
     },
 
     retrieveUsername: async function () {
-        const {data: user} = await octokit.request('GET /user');
+        const { data: user } = await octokit.request('GET /user');
         return user.login;
     },
 
@@ -128,23 +128,44 @@ module.exports = {
 
             spinner.start('Sending release information to Slack channel...');
 
-            let slackHookUrl = process.env.SLACK_HOOK_URL;
-            if (!slackHookUrl) {
+            const slackHookUrls = process.env.SLACK_HOOK_URL;
+            if (!slackHookUrls) {
                 spinner.fail("Release not announced on Slack: configuration not found!");
                 return;
             }
 
-            axios
-                .post(process.env.SLACK_HOOK_URL, {
-                    text: repo + " changelog for upcoming release:\n\n```\n" + message + "```"
-                })
-                .catch(error => {
-                    spinner.fail(`Something went wrong while sending to Slack channel: ${error}`)
-                });
+            const slackHookUrlList = slackHookUrls.split(",");
+            slackHookUrlList.forEach(channelUrl => postToSlack(channelUrl, repo, message));
 
             spinner.succeed('Changelog published to Slack.');
         }
     }
+}
+
+function postToSlack(channelUrl, repo, message) {
+    axios
+        .post(channelUrl, {
+            "text": `${repo} Changelog`,
+            "blocks": [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": `:rocket: *${repo} Changelog*`
+                    }
+                },
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "```" + message + "```"
+                    }
+                }
+            ]
+        })
+        .catch(error => {
+            spinner.fail(`Something went wrong while sending to Slack channel: ${error}`)
+        });
 }
 
 function prepareReleaseUrl(releaseUrl) {

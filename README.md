@@ -67,10 +67,15 @@ variable with the appropriate value.
 export SLACK_HOOK_URL=your_slack_hook_url
 ```
 
+Also, multiple hook URLs allowed to be defined like below:
+
+```shell
+export SLACK_HOOK_URL=your_slack_hook_url_1,your_slack_hook_url_2,...
+```
+
 If the above variable is set and the `-p` command given while running the command, an announcement will be post to the
 given Slack channel. You can find detailed information in the [Command Line Usage](#command-line-usage) section.
 
-e.g.
 ```shell
 yaba -p
 ```

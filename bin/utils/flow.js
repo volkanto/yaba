@@ -1,5 +1,6 @@
 const { Octokit } = require("octokit");
 const supportsHyperlinks = require('supports-hyperlinks');
+const hyperlinker = require('hyperlinker');
 const isOnline = require('is-online');
 const ora = require('ora');
 const spinner = ora();

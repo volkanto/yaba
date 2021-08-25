@@ -107,7 +107,7 @@ module.exports = {
      * @returns {string}
      */
     retrieveOwner: function (owner, username) {
-        return (owner || (process.env.GITHUB_REPO_OWNER || process.env.YABA_GITHUB_REPO_OWNER) || username);
+        return (owner || process.env.YABA_GITHUB_REPO_OWNER || username);
     },
 
     /**
@@ -140,7 +140,7 @@ module.exports = {
      * @returns {boolean}
      */
     requiredEnvVariablesExist: function () {
-        if (process.env.GITHUB_ACCESS_TOKEN || process.env.YABA_GITHUB_ACCESS_TOKEN) {
+        if (process.env.YABA_GITHUB_ACCESS_TOKEN) {
             return true;
         }
         return false;

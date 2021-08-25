@@ -8,7 +8,7 @@ const helper = require('./helper.js');
 const kleur = require('kleur');
 const axios = require('axios');
 const octokit = new Octokit({
-    auth: process.env.GITHUB_ACCESS_TOKEN || process.env.YABA_GITHUB_ACCESS_TOKEN
+    auth: process.env.YABA_GITHUB_ACCESS_TOKEN
 });
 
 module.exports = {
@@ -214,7 +214,7 @@ module.exports = {
 
             spinner.start('Sending release information to Slack channel...');
 
-            const slackHookUrls = process.env.SLACK_HOOK_URL || process.env.YABA_SLACK_HOOK_URL;
+            const slackHookUrls = process.env.YABA_SLACK_HOOK_URL;
             if (!slackHookUrls) {
                 spinner.fail("Release not announced on Slack: configuration not found!");
                 return;
@@ -225,8 +225,6 @@ module.exports = {
             for (const channelUrl of slackHookUrlList) {
                 await postToSlack(channelUrl, message);
             }
-
-            spinner.succeed('Changelog published to Slack.');
         }
     }
 }
@@ -241,8 +239,12 @@ module.exports = {
 async function postToSlack(channelUrl, message) {
     await axios
         .post(channelUrl, message)
+        .then(function (response) {
+            spinner.succeed('Changelog published to Slack.');
+        })
         .catch(error => {
-            spinner.fail(`Something went wrong while sending to Slack channel: ${error}`)
+            spinner.fail(`Something went wrong while sending to Slack channel: ${error}`);
+            process.exit();
         });
 }
 

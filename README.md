@@ -41,7 +41,7 @@ enable `yaba` CLI to access your repos.
 Now, your personal access token is generated. Copy that token and define that one as an environment variable:
 
 ```shell
-export GITHUB_ACCESS_TOKEN=generated_personal_access_token
+export YABA_GITHUB_ACCESS_TOKEN=generated_personal_access_token
 ```
 
 You can define that env variable into `~/.bashrc`, `~/.bash_profile` or `~/.zshrc` file, choose which one is suitable
@@ -52,7 +52,7 @@ If the repository owner is another GitHub account or organisation, you can defin
 owner to the command in every run.
 
 ```shell
-export GITHUB_REPO_OWNER=repository_owner
+export YABA_GITHUB_REPO_OWNER=repository_owner
 ```
 
 Always `-o` or `--owner` has precedence over authenticated user. Presendence is
@@ -64,13 +64,13 @@ If you want to announce your release/changelog to the specific Slack channel, yo
 variable with the appropriate value.
 
 ```shell
-export SLACK_HOOK_URL=your_slack_hook_url
+export YABA_SLACK_HOOK_URL=your_slack_hook_url
 ```
 
 Also, multiple hook URLs allowed to be defined like below:
 
 ```shell
-export SLACK_HOOK_URL=your_slack_hook_url_1,your_slack_hook_url_2,...
+export YABA_SLACK_HOOK_URL=your_slack_hook_url_1,your_slack_hook_url_2,...
 ```
 
 If the above variable is set and the `-p` command given while running the command, an announcement will be post to the

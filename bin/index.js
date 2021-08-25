@@ -1,78 +1,102 @@
 #!/usr/bin/env node
 
-// third party lib definitions
 const kleur = require("kleur");
-
-// local variables
 const helper = require('./utils/helper.js');
 const tool = require('./utils/tool.js');
 const flow = require('./utils/flow.js');
 const options = require('./utils/command.js').options;
 
-async function run() {
+runYaba();
+
+async function runYaba() {
 
     try {
 
         // https://www.npmjs.com/package/tiny-updater OR https://www.npmjs.com/package/update-notifier
         // can be used instead below method.
+
         await tool.checkUpdate(); // check if the yaba cli has newer version
-
         // check required ENV variables
+
         flow.checkRequiredEnvVariables();
-
         // check if the current directory is git repo
-        if (options.repo == undefined && !helper.isGitRepo()) {
-            console.log(`The directory '${helper.retrieveCurrentDirectory()}' is not a Git repo.`);
-            return;
-        }
 
+        checkDirectory()
         // check internet connection
+
         await flow.checkInternetConnection();
+        // prepare username, repoOwner and releaseRepo
 
         const username = await flow.retrieveUsername();
         const repoOwner = helper.retrieveOwner(options.owner, username);
         const releaseRepo = helper.retrieveReleaseRepo(options.repo);
 
-        // fetch latest release
-        const latestRelease = await flow.fetchLatestRelease(repoOwner, releaseRepo);
-
         // fetch head branch
-        const headBranch = await flow.fetchHeadBranch(repoOwner, releaseRepo);
-
-        if (headBranch == null) {
-            console.log(kleur.red("Head branch can not be found! The release has been interrupted!"));
-            return;
-        }
+        const headBranch = await checkHeadBranch(repoOwner, releaseRepo);
 
         // preparing the changeLog from the main/master branch if there is no previous release
-        let changeLog = latestRelease == null
-            ? await flow.listCommits(repoOwner, releaseRepo, headBranch)
-            : await flow.prepareChangelog(repoOwner, releaseRepo, latestRelease.tag_name, headBranch);
+        let changeLog = await flow.prepareChangeLog(repoOwner, releaseRepo, headBranch);
 
         // show only changelog
-        if (changeLog.length != 0 && options.changelog) {
-            console.log('\n\n' + kleur.green().underline(`${releaseRepo} changelog for upcoming release:`) + `\n\n${helper.prepareChangeLog(options.body, changeLog)}\n`);
+        if (canShowChangelog(changeLog)) {
+            printChangelog(releaseRepo, changeLog);
         }
 
         // create the release
-        if (changeLog.length != 0 && !options.changelog) {
-            const isPermitted = await helper.releaseCreatePermit(options.interactive);
-            if (isPermitted) {
-                let preparedChangeLog = helper.prepareChangeLog(options.body, changeLog);
-                await flow.createRelease(repoOwner, releaseRepo, options.draft, options.releaseName, preparedChangeLog, options.tag);
-                helper.playSound(options.sound);
-
-                // publishes the changelog on slack
-                flow.publishToSlack(options.publish, releaseRepo, preparedChangeLog);
-
-            } else {
-                console.log('Release was not prepared!');
-            }
+        if (canCreateRelease(changeLog)) {
+            await prepareRelease(changeLog, repoOwner, releaseRepo);
         }
+
+        // release completed, to prevent hanging forcing to exit
+        process.exit(1);
 
     } catch (error) {
         console.log(error);
     }
 }
 
-run();
+async function prepareRelease(changeLog, repoOwner, releaseRepo) {
+
+    const hasReleaseCreatePermission = await helper.releaseCreatePermit(options.interactive);
+    if (hasReleaseCreatePermission) {
+        let preparedChangeLog = helper.prepareChangeLog(options.body, changeLog);
+        await flow.createRelease(repoOwner, releaseRepo, options.draft, options.releaseName, preparedChangeLog, options.tag);
+        helper.playSound(options.sound);
+
+        // publishes the changelog on slack
+        await flow.publishToSlack(options.publish, releaseRepo, preparedChangeLog);
+
+    } else {
+        console.log('Release was not prepared!');
+    }
+}
+
+async function checkHeadBranch(repoOwner, releaseRepo) {
+    const headBranch = await flow.fetchHeadBranch(repoOwner, releaseRepo);
+    if (headBranch == null) {
+        console.log(kleur.red("Head branch can not be found! The release has been interrupted!"));
+        process.exit();
+    }
+    return headBranch;
+}
+
+function checkDirectory() {
+    // check if the current directory is git repo
+    if (options.repo == undefined && !helper.isGitRepo()) {
+        console.log(`The directory '${helper.retrieveCurrentDirectory()}' is not a Git repo.`);
+        process.exit();
+    }
+}
+
+function printChangelog(repoName, changeLog) {
+    console.log('\n\n' + kleur.green().underline(`${repoName} changelog for upcoming release:`) + `\n\n${helper.prepareChangeLog(options.body, changeLog)}\n`);
+}
+
+function canCreateRelease(changeLog) {
+    return changeLog.length != 0 && !options.changelog;
+}
+
+function canShowChangelog(changeLog) {
+    return changeLog.length != 0 && options.changelog;
+}
+

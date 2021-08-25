@@ -1,0 +1,26 @@
+{
+  "text": ":warning: Release has been created for {repo}!",
+  "blocks": [
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "<!here> will release {repo} soon!"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": ":rocket: *{repo} Changelog*"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "```{changelog}```"
+      }
+    }
+  ]
+}

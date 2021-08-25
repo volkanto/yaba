@@ -184,15 +184,17 @@ module.exports = {
     /**
      * @param repo the repository to prepare Slack message for
      * @param message the changelog to send to Slack channel(s)
+     * @param releaseUrl the release tag url on Github
+     * @param releaseName the title of the release
      * @returns {string} the formatted JSON to send to Slack
      */
-    prepareSlackMessage: function (repo, message) {
+    prepareSlackMessage: function (repo, message, releaseUrl, releaseName) {
 
         const slackMessageTemplatePath = path.join(__dirname, constants.SLACK_POST_TEMPLATE);
         let templateFile = fs.readFileSync(slackMessageTemplatePath);
         let templateJson = JSON.parse(templateFile);
         let slackMessageTemplate = JSON.stringify(templateJson);
 
-        return stringUtils.format(slackMessageTemplate, {repo: repo, changelog: message});
+        return stringUtils.format(slackMessageTemplate, {repo: repo, changelog: message, releaseUrl: releaseUrl, releaseName: releaseName});
     }
 }

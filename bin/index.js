@@ -60,11 +60,14 @@ async function prepareRelease(changeLog, repoOwner, releaseRepo) {
     const hasReleaseCreatePermission = await helper.releaseCreatePermit(options.interactive);
     if (hasReleaseCreatePermission) {
         let preparedChangeLog = helper.prepareChangeLog(options.body, changeLog);
-        await flow.createRelease(repoOwner, releaseRepo, options.draft, options.releaseName, preparedChangeLog, options.tag);
+        const releaseUrl = await flow.createRelease(repoOwner, releaseRepo, options.draft, options.releaseName,
+            preparedChangeLog, options.tag);
+
+        // play yaba sound if the release successfully created
         helper.playSound(options.sound);
 
         // publishes the changelog on slack
-        await flow.publishToSlack(options.publish, releaseRepo, preparedChangeLog);
+        await flow.publishToSlack(options.publish, releaseRepo, preparedChangeLog, releaseUrl, options.releaseName);
 
     } else {
         console.log('Release was not prepared!');

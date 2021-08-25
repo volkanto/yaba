@@ -177,13 +177,17 @@ module.exports = {
 
             const releaseUrl = prepareReleaseUrl(newRelease.html_url);
             spinner.succeed(`Release has been prepared on Github. ${releaseUrl}`);
+            return releaseUrl;
 
         } catch (error) {
             let errorMessage = "\n";
-            error.errors.forEach(element => {
+            let errors = error.response.data.errors;
+            let message = error.response.data.message;
+            errors.forEach(element => {
                 errorMessage += `\t* field: '${element.field}' - code: '${element.code}'`;
             });
-            spinner.fail(`Something went wrong while preparing the release! ${errorMessage}`);
+            spinner.fail(`${message} while preparing the release! ${errorMessage}`);
+            process.exit();
         }
     },
 
@@ -201,8 +205,10 @@ module.exports = {
      * @param publish decides if the given message to be published to the slack channels
      * @param repo the repository to prepare the slack message header
      * @param changelog the changelog/message to send to the slack channels
+     * @param releaseUrl the release tag url on Github
+     * @param releaseName the title of the release
      */
-    publishToSlack: async function (publish, repo, changelog) {
+    publishToSlack: async function (publish, repo, changelog, releaseUrl, releaseName) {
 
         if (publish == true) {
 
@@ -215,11 +221,10 @@ module.exports = {
             }
 
             const slackHookUrlList = slackHookUrls.split(",");
-            const message = helper.prepareSlackMessage(repo, changelog);
+            const message = helper.prepareSlackMessage(repo, changelog, releaseUrl, releaseName);
             for (const channelUrl of slackHookUrlList) {
                 await postToSlack(channelUrl, message);
             }
-            // slackHookUrlList.forEach(channelUrl => postToSlack(channelUrl, repo, message));
 
             spinner.succeed('Changelog published to Slack.');
         }

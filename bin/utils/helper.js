@@ -195,6 +195,11 @@ module.exports = {
         let templateJson = JSON.parse(templateFile);
         let slackMessageTemplate = JSON.stringify(templateJson);
 
-        return stringUtils.format(slackMessageTemplate, {repo: repo, changelog: message, releaseUrl: releaseUrl, releaseName: releaseName});
+        return stringUtils.format(slackMessageTemplate, {
+            repo: repo,
+            changelog: message.trim(),
+            releaseUrl: releaseUrl,
+            releaseName: releaseName
+        });
     }
 }

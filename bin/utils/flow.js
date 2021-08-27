@@ -175,9 +175,11 @@ module.exports = {
                 tag_name: helper.releaseTagName(tag_name)
             });
 
+            // if the user terminal supports hyperlink, this will be a clickable link, otherwise prints plain text.
             const releaseUrl = prepareReleaseUrl(newRelease.html_url);
             spinner.succeed(`Release has been prepared on Github. ${releaseUrl}`);
-            return releaseUrl;
+
+            return newRelease.html_url;
 
         } catch (error) {
             let errorMessage = "\n";

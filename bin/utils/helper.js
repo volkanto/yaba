@@ -123,18 +123,6 @@ module.exports = {
     },
 
     /**
-     *
-     * retrieves the head branch from the given {@code branch} list.
-     *
-     * @param branches the all the branches which are belongs to the related repository.
-     * @returns {null|*}
-     */
-    retrieveHeadBranch: function (branches) {
-        let headBranch = branches.find(branch => branch.name === 'master' || branch.name === 'main');
-        return headBranch == undefined ? null : headBranch.name;
-    },
-
-    /**
      * checks if all the required environment variables are set.
      *
      * @returns {boolean}

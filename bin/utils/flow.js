@@ -73,12 +73,13 @@ module.exports = {
      */
     fetchHeadBranch: async function (owner, repo) {
         spinner.start('Fetching head branch...');
-        const {data: branches} = await octokit.request('GET /repos/{owner}/{repo}/branches', {
+        const {data: headBranch} = await octokit.request('GET /repos/{owner}/{repo}/branches/{branch}', {
             owner: owner,
-            repo: repo
+            repo: repo,
+            branch: 'master'
         });
-        const headBranch = helper.retrieveHeadBranch(branches);
-        spinner.succeed(`Head branch is fetched: ${kleur.blue().bold().underline(headBranch)}`);
+
+        spinner.succeed(`Head branch is fetched: ${kleur.blue().bold().underline(headBranch.name)}`);
         return headBranch;
     },
 

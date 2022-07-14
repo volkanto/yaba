@@ -80,7 +80,7 @@ module.exports = {
         });
 
         spinner.succeed(`Head branch is fetched: ${kleur.blue().bold().underline(headBranch.name)}`);
-        return headBranch;
+        return headBranch.name;
     },
 
     /**

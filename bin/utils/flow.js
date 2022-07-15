@@ -99,6 +99,9 @@ module.exports = {
         let changeLog = latestRelease == null
             ? await this.listCommits(owner, repo, head)
             : await this.prepareChangelog(owner, repo, latestRelease.tag_name, head);
+
+
+            
         return changeLog;
     },
 
@@ -113,21 +116,30 @@ module.exports = {
      */
     prepareChangelog: async function (owner, repo, base, head) {
         spinner.start('Preparing the changelog....');
-        const {data: changeLog} = await octokit.request('GET /repos/{owner}/{repo}/compare/{base}...{head}', {
-            owner: owner,
-            repo: repo,
-            base: base,
-            head: head
-        });
-        if (changeLog.commits.length != 0) {
-            spinner.succeed('Changelog has been prepared...');
-        } else {
-            spinner.succeed(kleur.yellow().underline('Nothing found to release.'));
-        }
+        
+        try {
+            const {data: changeLog} = await octokit.request('GET /repos/{owner}/{repo}/compare/{base}...{head}', {
+                owner: owner,
+                repo: repo,
+                base: base,
+                head: head
+            });
 
-        return changeLog.commits.map(item => {
-            return item.commit.message;
-        });
+            if (changeLog.commits.length != 0) {
+                spinner.succeed('Changelog has been prepared...');
+            } else {
+                spinner.succeed(kleur.yellow().underline('Nothing found to release.'));
+            }
+    
+            return changeLog.commits.map(item => {
+                return item.commit.message;
+            });
+
+        } catch(error) {
+            const errorResponseData = error.response.data;
+            spinner.fail(`Something went wrong while preparing the changelog! ${errorResponseData.message} -> ${errorResponseData.documentation_url}`);
+            process.exit();
+        }
     },
 
     /**

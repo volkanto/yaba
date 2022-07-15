@@ -68,6 +68,21 @@ module.exports = {
         return stringUtils.isBlank(releaseMessage) ? "* No changes" : releaseMessage;
     },
 
+
+    prepareChangelogFromTemplate(owner, repo, lastTag, newTag, givenBody, changelog) {
+
+        const templatePath = path.join(__dirname, constants.UPDATE_MESSAGE_TEMPLATE);
+        const templateFile = fs.readFileSync(templatePath, 'utf8');
+    
+        const message = stringUtils.format(templateFile, {
+            localVersion: kleur.red().bold(localVersion),
+            lastVersion: kleur.green().bold(lastVersion),
+            updateCommand: kleur.green(constants.UPDATE_COMMAND)
+        });
+    
+        return message;
+    }
+
     /**
      * checks if the current directory is a git repo or not.
      *

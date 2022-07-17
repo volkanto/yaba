@@ -33,9 +33,11 @@ jobs:
           node-version: 16
           registry-url: https://npm.pkg.github.com/
           scope: ${{ github.repository_owner }}
-      - run: npm publish
+      - name: scope package name as required by GHPR
+        run: npm init -y --scope ${{ github.repository_owner }}
+      - run: npm publish --ignore-scripts
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.PUBLISH_GITHUB_PACKAGE_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: "Print errors"
         if: ${{ failure() }}
         run: cat /home/runner/.npm/_logs/*

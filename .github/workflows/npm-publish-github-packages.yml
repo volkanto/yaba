@@ -3,13 +3,9 @@
 
 name: Publish package to GitHub Packages
 on:
-  pull_request:
-    types:
-      # check title when opened.
-      - opened
-      # check title when edited
-      - edited
-      - synchronize
+  release:
+    types: [created]
+    
 jobs:
   build:
     runs-on: ubuntu-latest

@@ -25,6 +25,7 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
           # Defaults to the user or organization that owns the workflow file
           scope: '@volkanto'
+      - run: echo "//https://npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" > ~/.npmrc
       - run: npm install
       - run: npm publish
         env:

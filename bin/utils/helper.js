@@ -62,7 +62,7 @@ module.exports = {
         // FIXME: there should be a better way
         changeLog.forEach(commit => {
             let message = commit.split('\n')[0];
-            releaseMessage += `* ${message}\n`;
+            releaseMessage += `- ${message}\n`;
         });
 
         return stringUtils.isBlank(releaseMessage) ? "* No changes" : releaseMessage;

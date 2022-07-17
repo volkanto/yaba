@@ -43,23 +43,23 @@ module.exports = {
     },
 
     /**
-     * fetches the latest release
+     * fetches the last release
      *
      * @param owner the owner of the repository
-     * @param repo the repository to fetch latest release for
+     * @param repo the repository to fetch last release for
      * @returns {Promise<null|any>}
      */
-    fetchLatestRelease: async function (owner, repo) {
-        spinner.start('Fetching latest release...');
+    fetchLastRelease: async function (owner, repo) {
+        spinner.start('Fetching the last release...');
         try {
             const {data: release} = await octokit.request('GET /repos/{owner}/{repo}/releases/latest', {
                 owner: owner,
                 repo: repo
             });
-            spinner.succeed(`Latest release is fetched: ${kleur.blue().bold().underline(release.tag_name)}`);
+            spinner.succeed(`Last release: ${kleur.blue().bold().underline(release.tag_name)}`);
             return release;
         } catch (error) {
-            spinner.warn(`Latest release not found.`);
+            spinner.warn(`Last release not found.`);
             return null;
         }
     },
@@ -79,7 +79,7 @@ module.exports = {
             branch: 'master'
         });
 
-        spinner.succeed(`Head branch is fetched: ${kleur.blue().bold().underline(headBranch.name)}`);
+        spinner.succeed(`Head branch: ${kleur.blue().bold().underline(headBranch.name)}`);
         return headBranch.name;
     },
 
@@ -90,15 +90,15 @@ module.exports = {
      * @param owner the owner of the repository
      * @param repo the repository to prepare changelog for
      * @param head the head branch
+     * @param lastRelease the last release of the repo
      * @returns {Promise<*|*>}
      */
-    prepareChangeLog: async function (owner, repo, head) {
-        // fetch latest release
-        const latestRelease = await this.fetchLatestRelease(owner, repo);
-
-        let changeLog = latestRelease == null
+    prepareChangeLog: async function (owner, repo, head, lastRelease) {
+        
+        let changeLog = lastRelease == null
             ? await this.listCommits(owner, repo, head)
-            : await this.prepareChangelog(owner, repo, latestRelease.tag_name, head);
+            : await this.prepareChangelog(owner, repo, lastRelease.tag_name, head);
+
         return changeLog;
     },
 
@@ -113,21 +113,30 @@ module.exports = {
      */
     prepareChangelog: async function (owner, repo, base, head) {
         spinner.start('Preparing the changelog....');
-        const {data: changeLog} = await octokit.request('GET /repos/{owner}/{repo}/compare/{base}...{head}', {
-            owner: owner,
-            repo: repo,
-            base: base,
-            head: head
-        });
-        if (changeLog.commits.length != 0) {
-            spinner.succeed('Changelog has been prepared...');
-        } else {
-            spinner.succeed(kleur.yellow().underline('Nothing found to release.'));
-        }
+        
+        try {
+            const {data: changeLog} = await octokit.request('GET /repos/{owner}/{repo}/compare/{base}...{head}', {
+                owner: owner,
+                repo: repo,
+                base: base,
+                head: head
+            });
 
-        return changeLog.commits.map(item => {
-            return item.commit.message;
-        });
+            if (changeLog.commits.length != 0) {
+                spinner.succeed('Changelog has been prepared...');
+            } else {
+                spinner.succeed(kleur.yellow().underline('Nothing found to release.'));
+            }
+    
+            return changeLog.commits.map(item => {
+                return item.commit.message;
+            });
+
+        } catch(error) {
+            const errorResponseData = error.response.data;
+            spinner.fail(`Something went wrong while preparing the changelog! ${errorResponseData.message} -> ${errorResponseData.documentation_url}`);
+            process.exit();
+        }
     },
 
     /**

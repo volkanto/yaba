@@ -1,11 +1,11 @@
 {
-  "text": ":warning: Release has been created for {repo}!",
+  "text": ":loudspeaker: Release Notes - {repo}",
   "blocks": [
     {
       "type": "header",
       "text": {
         "type": "plain_text",
-        "text": ":warning: Release has been created for {repo}!"
+        "text": ":loudspeaker: Release Notes - {repo}"
       }
     },
     {
@@ -15,7 +15,7 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "<!here> will release `{repo}` soon! :rocket:"
+        "text": "<!here> new version will be deployed for `{repo}` soon! :rocket:"
       }
     },
     {

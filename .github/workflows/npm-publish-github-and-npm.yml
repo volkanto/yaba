@@ -38,18 +38,39 @@ jobs:
   #       env:
   #         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+  package:
+      needs: [build]
+      runs-on: ubuntu-latest 
+      steps:
+        - uses: actions/checkout@v2
+        - name: User Node.js 16.x
+          uses: actions/setup-node@v3
+          with:
+            node-version: 16.x
+        - run: npm pack
+        - name: Upload
+          uses: actions/upload-artifact@v2
+          with:
+              name: package
+              path: "*.tgz"
+
   publish-gpkg:
-    needs: build
+    needs: [package]
+    name: "Publish to GitHub Packages"
     runs-on: ubuntu-latest 
     permissions: 
       contents: read
       packages: write 
     steps:
+      - name: Upload
+        uses: actions/download-artifact@v2
+        with:
+            name: package
       - uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
-          registry-url: https://npm.pkg.github.com
+          node-version: 16.x
+          registry-url: https://npm.pkg.github.com/
           scope: "@volkanto"
-      - run: npm publish
+      - run: npm publish $(ls *.tgz)
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}

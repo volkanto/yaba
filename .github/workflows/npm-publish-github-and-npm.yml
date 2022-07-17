@@ -19,8 +19,26 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
-      - run: npm i
+          node-version: 16.x
+      - run: npm ci
+
+  publish-gpr:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          registry-url: https://npm.pkg.github.com/
+          scope: "@nullndr"
+      - run: npm install
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # publish-npm:
   #   needs: build
@@ -38,39 +56,40 @@ jobs:
   #       env:
   #         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  package:
-      needs: [build]
-      runs-on: ubuntu-latest 
-      steps:
-        - uses: actions/checkout@v2
-        - name: User Node.js 16.x
-          uses: actions/setup-node@v3
-          with:
-            node-version: 16.x
-        - run: npm pack
-        - name: Upload
-          uses: actions/upload-artifact@v2
-          with:
-              name: package
-              path: "*.tgz"
+  # package:
+  #     needs: [build]
+  #     runs-on: ubuntu-latest 
+  #     steps:
+  #       - uses: actions/checkout@v2
+  #       - name: User Node.js 16.x
+  #         uses: actions/setup-node@v3
+  #         with:
+  #           node-version: 16.x
+  #       - run: npm pack
+  #       - name: Upload
+  #         uses: actions/upload-artifact@v2
+  #         with:
+  #             name: package
+  #             path: "*.tgz"
 
-  publish-gpkg:
-    needs: [package]
-    name: "Publish to GitHub Packages"
-    runs-on: ubuntu-latest 
-    permissions: 
-      contents: read
-      packages: write 
-    steps:
-      - name: Upload
-        uses: actions/download-artifact@v2
-        with:
-            name: package
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16.x
-          registry-url: https://npm.pkg.github.com/
-          scope: "@volkanto"
-      - run: npm publish $(ls *.tgz)
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  # publish-gpkg:
+  #   needs: [package]
+  #   name: "Publish to GitHub Packages"
+  #   runs-on: ubuntu-latest 
+  #   permissions: 
+  #     contents: read
+  #     packages: write 
+  #   steps:
+  #     - name: Upload
+  #       uses: actions/download-artifact@v2
+  #       with:
+  #           name: package
+  #     - uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 16.x
+  #         registry-url: https://npm.pkg.github.com/
+  #         scope: "@volkanto"
+  #     - run: npm publish $(ls *.tgz)
+  #       env:
+  #         NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+

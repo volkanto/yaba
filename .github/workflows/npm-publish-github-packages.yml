@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 16
-      - run: yarn
+      - run: npm install
 
   publish-gpr:
     needs: build
@@ -33,8 +33,8 @@ jobs:
           node-version: 16
           registry-url: https://npm.pkg.github.com/
           scope: ${{ github.repository_owner }}
-      - run: yarn publish
+      - run: npm publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.PUBLISH_GITHUB_PACKAGE_TOKEN }}
 
 

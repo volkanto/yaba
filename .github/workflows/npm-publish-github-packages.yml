@@ -36,5 +36,8 @@ jobs:
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.PUBLISH_GITHUB_PACKAGE_TOKEN }}
+      - name: "Print errors"
+        if: ${{ failure() }}
+        run: cat /home/runner/.npm/_logs/*
 
 

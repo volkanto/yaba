@@ -5,6 +5,8 @@ const helper = require('./utils/helper.js');
 const tool = require('./utils/tool.js');
 const flow = require('./utils/flow.js');
 const options = require('./utils/command.js').options;
+const templateUtils = require('./utils/template-utils.js');
+const boxen = require('boxen');
 
 runYaba();
 
@@ -34,8 +36,11 @@ async function runYaba() {
         // fetch head branch
         const headBranch = await checkHeadBranch(repoOwner, releaseRepo);
 
+        // fetch last release of the repository
+        const lastRelease = await flow.fetchLastRelease(repoOwner, releaseRepo);
+
         // preparing the changeLog from the main/master branch if there is no previous release
-        let changeLog = await flow.prepareChangeLog(repoOwner, releaseRepo, headBranch);
+        let changeLog = await flow.prepareChangeLog(repoOwner, releaseRepo, headBranch, lastRelease);
 
         // show only changelog
         if (canShowChangelog(changeLog)) {
@@ -44,7 +49,7 @@ async function runYaba() {
 
         // create the release
         if (canCreateRelease(changeLog)) {
-            await prepareRelease(changeLog, repoOwner, releaseRepo);
+            await prepareRelease(changeLog, repoOwner, releaseRepo, lastRelease.tag_name);
         }
 
         // release completed, to prevent hanging forcing to exit
@@ -55,14 +60,16 @@ async function runYaba() {
     }
 }
 
-async function prepareRelease(changeLog, repoOwner, releaseRepo) {
+async function prepareRelease(changeLog, repoOwner, releaseRepo, lastReleaseTag) {
 
     const hasReleaseCreatePermission = await helper.releaseCreatePermit(options.interactive);
+
     if (hasReleaseCreatePermission) {
         let preparedChangeLog = helper.prepareChangeLog(options.body, changeLog);
+        let changeLogDetails = templateUtils.generateChangelog(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, helper.releaseTagName(options.tag));
         let releaseName = helper.releaseName(options.releaseName)
         const releaseUrl = await flow.createRelease(repoOwner, releaseRepo, options.draft, releaseName,
-            preparedChangeLog, options.tag);
+            changeLogDetails, options.tag);
 
         // play yaba sound if the release successfully created
         helper.playSound(options.sound);
@@ -93,7 +100,16 @@ function checkDirectory() {
 }
 
 function printChangelog(repoName, changeLog) {
-    console.log('\n\n' + kleur.green().underline(`${repoName} changelog for upcoming release:`) + `\n\n${helper.prepareChangeLog(options.body, changeLog)}\n`);
+    const changelogBoxOptions = {
+        padding: 1,
+        title: 'Changelog',
+        titleAlignment: 'left',
+        align: 'left',
+        borderColor: 'green',
+        borderStyle: 'round'
+    }
+    const changelogMsg = `\n${helper.prepareChangeLog(options.body, changeLog)}`;
+    console.log('\n\n' + boxen(changelogMsg, changelogBoxOptions)); 
 }
 
 function canCreateRelease(changeLog) {

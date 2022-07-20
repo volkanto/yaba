@@ -1,8 +1,6 @@
 import yargs from "yargs";
 import { hideBin } from 'yargs/helpers'
-// import { version as appVersion } from '../../package.json';
-// import packageConfig from '../../package.json' assert { type: 'json' }
-const appVersion = '1.7.4';
+import _packageJson from "../../package.json" assert { type: "json" };
 
 
 const commands = yargs(hideBin(process.argv))
@@ -49,7 +47,7 @@ const commands2 = yargs(hideBin(process.argv))
     .alias('h', 'help')
     .help('help')
     .alias('v', 'version')
-    .version(appVersion)
+    .version(_packageJson.version)
     .argv;
 
 /*

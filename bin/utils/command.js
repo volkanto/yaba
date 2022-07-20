@@ -1,7 +1,59 @@
-const yargs = require("yargs");
-const package = require('../../package.json');
+import yargs from "yargs";
+import { hideBin } from 'yargs/helpers'
+// import { version as appVersion } from '../../package.json';
+// import packageConfig from '../../package.json' assert { type: 'json' }
+const appVersion = '1.7.4';
 
-const commands = yargs
+
+const commands = yargs(hideBin(process.argv))
+.command(
+    'get',
+    'make a get HTTP request',
+    function (yargs) {
+      return yargs.option('u', {
+        alias: 'url',
+        describe: 'the URL to make an HTTP request to'
+      })
+    },
+    function (argv) {
+      console.log(argv.url)
+    }
+  )
+  .command(
+    'volkan',
+    'test volkan',
+    function (yargs) {
+        return yargs.option('n', {
+          alias: 'name',
+          describe: 'set name'
+        })
+      },
+      function (argv) {
+        console.log(argv.name)
+      }
+  )
+  .help()
+  .argv;
+
+const commands2 = yargs(hideBin(process.argv))
+    .command('curl <url>', 'fetch the contents of the URL', () => { }, (argv) => {
+        console.info(argv)
+    })
+    .usage("Usage: yaba -o <owner> -r <repository> -t <tag> -n <release-name> -b <body> -d <draft> " +
+        "-c <changelog> -i <interactive> -s <sound> -p <publish>")
+    .option("c", {
+        alias: "changelog",
+        describe: "Shows only changelog without creating the release.",
+        type: "boolean"
+    })
+    .alias('h', 'help')
+    .help('help')
+    .alias('v', 'version')
+    .version(appVersion)
+    .argv;
+
+/*
+const commands = y
     .usage("Usage: yaba -o <owner> -r <repository> -t <tag> -n <release-name> -b <body> -d <draft> " +
         "-c <changelog> -i <interactive> -s <sound> -p <publish>")
     .option("o", {alias: "owner", describe: "The repository owner.", type: "string"})
@@ -42,10 +94,8 @@ const commands = yargs
     .alias('h', 'help')
     .help('help')
     .alias('v', 'version')
-    .version(package.version)
+    .version(appVersion)
     .argv;
+    */
 
-// yaba commands
-module.exports = {
-    options: commands
-}
+export default commands;

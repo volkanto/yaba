@@ -3,6 +3,8 @@
   "version": "1.7.4",
   "description": "Yaba is a simple CLI tool that helps you manage releases of your Github projects.",
   "main": "bin/index.js",
+  "type": "module",
+  "start" : "node --experimental-json-modules ./bin/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -19,7 +21,7 @@
   },
   "license": "MIT",
   "bin": {
-    "yaba": "./bin/index.js"
+    "yaba": "npm start"
   },
   "dependencies": {
     "axios": "^0.27.2",

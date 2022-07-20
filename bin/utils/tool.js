@@ -1,28 +1,22 @@
-const kleur = require('kleur');
-const semver = require('semver');
-const boxen = require('boxen');
-const stringUtils = require('./string-utils.js');
-const latestVersion = require('latest-version');
-const package = require('../../package.json');
-const path = require("path");
-const fs = require("fs");
-const constants = require('./constants');
+import kleur from 'kleur';
+import SemVer from 'semver';
+import boxen from 'boxen';
+import { format } from './string-utils.js';
+import latestVersion from 'latest-version';
+import _packageJson from "../../package.json" assert { type: "json" };
+import { retrieveFile } from './template-utils.js';
+import { appConstants, defaultBoxOptions } from './constants.js';
 
-module.exports = {
-
-    /**
-     * checks if yaba has newer version.
-     * @returns {Promise<void>}
-     */
-    checkUpdate: async function () {
-
-        const localVersion = package.version;
-        const lastVersion = await latestVersion('yaba-release-cli');
-
-        if (semver.gt(lastVersion, localVersion)) {
-            const message = prepareUpdateMessage(lastVersion, localVersion);
-            console.log(boxen(message, defaultBoxOptions));
-        }
+/**
+ * checks if yaba has newer version.
+ * @returns {Promise<void>}
+ */
+export async function checkUpdate() {
+    const appVersion = _packageJson.version;
+    const lastVersion = await latestVersion('yaba-release-cli');
+    if (SemVer.gt(lastVersion, appVersion)) {
+        const message = prepareUpdateMessage(lastVersion, appVersion);
+        console.log(boxen(message, defaultBoxOptions));
     }
 }
 
@@ -35,21 +29,12 @@ module.exports = {
  */
 function prepareUpdateMessage(lastVersion, localVersion) {
 
-    const templatePath = path.join(__dirname, constants.UPDATE_MESSAGE_TEMPLATE);
-    const templateFile = fs.readFileSync(templatePath, 'utf8');
+    const updateMessageTemplate = retrieveFile(appConstants.UPDATE_MESSAGE_TEMPLATE);
 
-    const message = stringUtils.format(templateFile, {
+    return format(updateMessageTemplate, {
         localVersion: kleur.red().bold(localVersion),
         lastVersion: kleur.green().bold(lastVersion),
-        updateCommand: kleur.green(constants.UPDATE_COMMAND)
+        updateCommand: kleur.green(appConstants.UPDATE_COMMAND)
     });
-
-    return message;
 }
 
-const defaultBoxOptions = {
-    padding: 1,
-    align: 'center',
-    borderColor: 'yellow',
-    borderStyle: 'round'
-}

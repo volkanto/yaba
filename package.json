@@ -2,6 +2,9 @@
   "name": "yaba-release-cli",
   "version": "1.7.4",
   "description": "Yaba is a simple CLI tool that helps you manage releases of your Github projects.",
+  "engines" : { 
+    "node" : ">=16.15.1"
+  },
   "main": "bin/index.js",
   "type": "module",
   "scripts": {

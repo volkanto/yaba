@@ -22,12 +22,16 @@ module.exports = {
      * this prepares the tag name in 'prod_global_yyyy-MM-dd.1' format.
      *
      * @param tagName the given tag name
+     * @param hotfix checks if the tag name must be created as hotfix or not
      * @returns {string|*} the prepared tag name
      */
-    releaseTagName: function (tagName) {
+    releaseTagName: function (tagName, hotfix) {
 
         if (stringUtils.isBlank(tagName)) {
             const currentDate = format(new Date(), constants.TAG_DATE_FORMAT);
+            if (hotfix) {
+                return `hotfix_prod_globl_${currentDate}.1`;
+            }
             return `prod_global_${currentDate}.1`;
         }
 

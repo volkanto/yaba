@@ -69,7 +69,7 @@ async function prepareRelease(changeLog, repoOwner, releaseRepo, lastReleaseTag)
         let changeLogDetails = templateUtils.generateChangelog(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, helper.releaseTagName(options.tag));
         let releaseName = helper.releaseName(options.releaseName)
         const releaseUrl = await flow.createRelease(repoOwner, releaseRepo, options.draft, releaseName,
-            changeLogDetails, options.tag);
+            changeLogDetails, options.tag, options.hotfix);
 
         // play yaba sound if the release successfully created
         helper.playSound(options.sound);

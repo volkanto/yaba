@@ -169,9 +169,10 @@ module.exports = {
      * @param name the name/title of the release
      * @param body the changelog to be defined in the release
      * @param tag_name the tag name
+     * @param hotfix checks if the tag name must be created as hotfix or not
      * @returns {Promise<void>}
      */
-    createRelease: async function (owner, repo, draft, name, body, tag_name) {
+    createRelease: async function (owner, repo, draft, name, body, tag_name, hotfix) {
 
         try {
             spinner.start('Preparing the release...');
@@ -182,7 +183,7 @@ module.exports = {
                 draft: draft,
                 name: helper.releaseName(name),
                 body: body,
-                tag_name: helper.releaseTagName(tag_name)
+                tag_name: helper.releaseTagName(tag_name, hotfix)
             });
 
             // if the user terminal supports hyperlink, this will be a clickable link, otherwise prints plain text.

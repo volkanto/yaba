@@ -7,6 +7,7 @@ const flow = require('./utils/flow.js');
 const options = require('./utils/command.js').options;
 const templateUtils = require('./utils/template-utils.js');
 const boxen = require('boxen');
+const { exec } = require('child_process');
 
 runYaba();
 
@@ -17,18 +18,21 @@ async function runYaba() {
         // https://www.npmjs.com/package/tiny-updater OR https://www.npmjs.com/package/update-notifier
         // can be used instead below method.
 
-        await tool.checkUpdate(); // check if the yaba cli has newer version
+        // check if the yaba cli has newer version
+        await tool.checkUpdate();
+        
         // check required ENV variables
-
         flow.checkRequiredEnvVariables();
+
         // check if the current directory is git repo
+        checkDirectory();
 
-        checkDirectory()
         // check internet connection
-
         await flow.checkInternetConnection();
-        // prepare username, repoOwner and releaseRepo
 
+        checkHotfixRelease();
+
+        // prepare username, repoOwner and releaseRepo
         const username = await flow.retrieveUsername();
         const repoOwner = helper.retrieveOwner(options.owner, username);
         const releaseRepo = helper.retrieveReleaseRepo(options.repo);
@@ -44,7 +48,7 @@ async function runYaba() {
 
         // show only changelog
         if (canShowChangelog(changeLog)) {
-            printChangelog(releaseRepo, changeLog);
+            printChangelog(changeLog);
         }
 
         // create the release
@@ -99,7 +103,28 @@ function checkDirectory() {
     }
 }
 
-function printChangelog(repoName, changeLog) {
+function checkHotfixRelease() {
+    // check if the current branch is not main/master and command has hotfix flag    
+    exec('git branch --show-current', (err, stdout, stderr) => {
+        if (err) {
+            console.log(`An error occurred: ${err.message}`);
+            process.exit();
+        }
+        
+        if (stderr) {
+            console.error(`An error occurred: ${stderr}`);
+            process.exit();
+        }
+
+        const currentBranch = stdout;
+        if (currentBranch == 'master' || currentBranch == 'main') {
+            console.log(kleur.red("you can not create hotfix from main or master branches!"));
+            process.exit();
+        }
+    });
+}
+
+function printChangelog(changeLog) {
     const changelogBoxOptions = {
         padding: 1,
         title: 'Changelog',

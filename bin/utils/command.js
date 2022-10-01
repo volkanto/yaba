@@ -19,7 +19,7 @@ const commands = yargs
         describe: "Creates the release as draft.",
         type: "boolean"
     })
-    .option("h", {
+    .option("f", {
         alias: "hotfix",
         describe: "Prepares the release with hotfix tag.",
         type: "boolean"

@@ -181,7 +181,7 @@ module.exports = {
                 owner: owner,
                 repo: repo,
                 draft: draft,
-                name: helper.releaseName(name),
+                name: name,
                 body: body,
                 tag_name: helper.releaseTagName(tag_name, hotfix)
             });

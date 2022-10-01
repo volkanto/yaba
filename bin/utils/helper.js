@@ -42,10 +42,15 @@ module.exports = {
      * prepares the title of the release. if the given {@code name} is blank, this prepares
      * the title in 'Global release yyyy-MM-dd' format.
      * @param name the given release name
+     * @param hotfix checks if the release name must be created as hotfix or not
      * @returns {string|*}
      */
-    releaseName: function (name) {
-        return stringUtils.isBlank(name) ? `Global release ${this.releaseDate()}` : name;
+    releaseName: function (name, hotfix) {
+        if(stringUtils.isBlank(name)) {
+            let releaseName = `Global release ${this.releaseDate()}`;
+            return hotfix ? 'Hotfix - ' + releaseName : releaseName;
+        }
+        return name;
     },
 
     /**

@@ -67,7 +67,7 @@ async function prepareRelease(changeLog, repoOwner, releaseRepo, lastReleaseTag)
     if (hasReleaseCreatePermission) {
         let preparedChangeLog = helper.prepareChangeLog(options.body, changeLog);
         let changeLogDetails = templateUtils.generateChangelog(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, helper.releaseTagName(options.tag));
-        let releaseName = helper.releaseName(options.releaseName)
+        let releaseName = helper.releaseName(options.releaseName, options.hotfix);
         const releaseUrl = await flow.createRelease(repoOwner, releaseRepo, options.draft, releaseName,
             changeLogDetails, options.tag, options.hotfix);
 

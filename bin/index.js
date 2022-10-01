@@ -116,8 +116,8 @@ function checkHotfixRelease() {
             process.exit();
         }
 
-        const currentBranch = stdout;
-        if (currentBranch == 'master' || currentBranch == 'main') {
+        const currentBranch = stdout.trim();
+        if (currentBranch === 'master' || currentBranch === 'main') {
             console.log(kleur.red("you can not create hotfix from main or master branches!"));
             process.exit();
         }

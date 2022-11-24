@@ -21,7 +21,7 @@ module.exports = {
         spinner.start('Checking required ENV variables...');
         if (helper.requiredEnvVariablesExist() == false) {
             spinner.fail('The required env variables are not set in order to run the command.');
-            process.exit();
+            process.exit(0);
         }
         spinner.succeed('Required ENV variables in place.');
     },
@@ -37,7 +37,7 @@ module.exports = {
         const isInternetUp = await isOnline();
         if (!isInternetUp) {
             spinner.fail('There is no internet connection!');
-            process.exit();
+            process.exit(0);
         }
         spinner.succeed('Internet connection established.');
     },
@@ -135,7 +135,7 @@ module.exports = {
         } catch(error) {
             const errorResponseData = error.response.data;
             spinner.fail(`Something went wrong while preparing the changelog! ${errorResponseData.message} -> ${errorResponseData.documentation_url}`);
-            process.exit();
+            process.exit(0);
         }
     },
 
@@ -199,7 +199,7 @@ module.exports = {
                 errorMessage += `\t* field: '${element.field}' - code: '${element.code}'`;
             });
             spinner.fail(`${message} while preparing the release! ${errorMessage}`);
-            process.exit();
+            process.exit(0);
         }
     },
 
@@ -256,7 +256,7 @@ async function postToSlack(channelUrl, message) {
         })
         .catch(error => {
             spinner.fail(`Something went wrong while sending to Slack channel: ${error}`);
-            process.exit();
+            process.exit(0);
         });
 }
 

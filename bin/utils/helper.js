@@ -22,12 +22,16 @@ module.exports = {
      * this prepares the tag name in 'prod_global_yyyy-MM-dd.1' format.
      *
      * @param tagName the given tag name
+     * @param hotfix checks if the tag name must be created as hotfix or not
      * @returns {string|*} the prepared tag name
      */
-    releaseTagName: function (tagName) {
+    releaseTagName: function (tagName, hotfix) {
 
         if (stringUtils.isBlank(tagName)) {
             const currentDate = format(new Date(), constants.TAG_DATE_FORMAT);
+            if (hotfix) {
+                return `hotfix_prod_globl_${currentDate}.1`;
+            }
             return `prod_global_${currentDate}.1`;
         }
 
@@ -38,10 +42,15 @@ module.exports = {
      * prepares the title of the release. if the given {@code name} is blank, this prepares
      * the title in 'Global release yyyy-MM-dd' format.
      * @param name the given release name
+     * @param hotfix checks if the release name must be created as hotfix or not
      * @returns {string|*}
      */
-    releaseName: function (name) {
-        return stringUtils.isBlank(name) ? `Global release ${this.releaseDate()}` : name;
+    releaseName: function (name, hotfix) {
+        if(stringUtils.isBlank(name)) {
+            let releaseName = `Global release ${this.releaseDate()}`;
+            return hotfix ? 'Hotfix - ' + releaseName : releaseName;
+        }
+        return name;
     },
 
     /**

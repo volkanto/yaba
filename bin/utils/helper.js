@@ -1,6 +1,5 @@
 import fs from 'fs';
 import prompts from 'prompts';
-import player from 'play-sound';
 import { isBlank, format as _format } from './string-utils.js';
 import path from 'path';
 import { format } from 'date-fns';
@@ -157,18 +156,6 @@ export async function releaseCreatePermit(interactive) {
     });
 
     return response.create;
-}
-
-/**
- * plays if the given {@code sound} parameter is {@code true}
- *
- * @param sound the parameter to decide to play sound
- */
-export function playSound(sound) {
-    if (sound == true) {
-        const filePath = path.join(__dirname, appConstants.SOUND_PATH);
-        player.play(filePath);
-    }
 }
 
 /**

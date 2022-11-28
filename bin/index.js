@@ -70,9 +70,6 @@ async function prepareRelease(changeLog, repoOwner, releaseRepo, lastReleaseTag)
         const releaseUrl = await flow.createRelease(repoOwner, releaseRepo, options.draft, releaseName,
             changeLogDetails, options.tag);
 
-        // play yaba sound if the release successfully created
-        helper.playSound(options.sound);
-
         // publishes the changelog on slack
         await flow.publishToSlack(options.publish, releaseRepo, preparedChangeLog, releaseUrl, releaseName);
 

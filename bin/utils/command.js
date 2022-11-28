@@ -7,7 +7,7 @@ import { hideBin } from 'yargs/helpers';
 
 const commands = yargs(hideBin(process.argv))
     .usage("Usage: yaba -o <owner> -r <repository> -t <tag> -n <release-name> -b <body> -d <draft> " +
-        "-c <changelog> -i <interactive> -s <sound> -p <publish>")
+        "-c <changelog> -i <interactive> -p <publish>")
     .option("o", {alias: "owner", describe: "The repository owner.", type: "string"})
     .option("r", {alias: "repo", describe: "The repository name.", type: "string"})
     .option("t", {alias: "tag", describe: "The name of the tag.", type: "string"})
@@ -31,11 +31,6 @@ const commands = yargs(hideBin(process.argv))
     .option("i", {
         alias: "interactive",
         describe: "Prompt before (draft) release is created (default true)",
-        type: "boolean"
-    })
-    .option("s", {
-        alias: "sound",
-        describe: "Play sound when the release created",
         type: "boolean"
     })
     .option("p", {

@@ -19,7 +19,7 @@ export function checkRequiredEnvVariables() {
     spinner.start('Checking required ENV variables...');
     if (helper.requiredEnvVariablesExist() == false) {
         spinner.fail('The required env variables are not set in order to run the command.');
-        process.exit(0);
+        process.exit(1);
     }
     spinner.succeed('Required ENV variables in place.');
 }
@@ -35,7 +35,7 @@ export async function checkInternetConnection() {
     const isInternetUp = await isOnline();
     if (!isInternetUp) {
         spinner.fail('There is no internet connection!');
-        process.exit(0);
+        process.exit(1);
     }
     spinner.succeed('Internet connection established.');
 }
@@ -133,7 +133,7 @@ export async function prepareChangelog(owner, repo, base, head) {
     } catch (error) {
         const errorResponseData = error.response.data;
         spinner.fail(`Something went wrong while preparing the changelog! ${errorResponseData.message} -> ${errorResponseData.documentation_url}`);
-        process.exit(0);
+        process.exit(1);
     }
 }
 
@@ -197,7 +197,7 @@ export async function createRelease(owner, repo, draft, name, body, tag_name) {
             errorMessage += `\t* field: '${element.field}' - code: '${element.code}'`;
         });
         spinner.fail(`${message} while preparing the release! ${errorMessage}`);
-        process.exit(0);
+        process.exit(1);
     }
 }
 

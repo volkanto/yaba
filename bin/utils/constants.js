@@ -1,5 +1,4 @@
 const appConstants = Object.freeze({
-    SOUND_PATH: '../assets/yaba.mp3',
     UPDATE_COMMAND: 'npm update -g yaba-release-cli',
     RELEASE_DATE_FORMAT: 'yyyy-MM-dd',
     TAG_DATE_FORMAT: 'yyyyMMdd',

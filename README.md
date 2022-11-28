@@ -91,7 +91,7 @@ Run `yaba` with `--help` options:
 ```shell
 ➜  ~ yaba --help
 Usage: yaba -o <owner> -r <repository> -t <tag> -n <release-name> -b <body> -d
-<draft> -c <changelog> -i <interactive> -s <sound> -p <publish>
+<draft> -c <changelog> -i <interactive> -p <publish>
 
 Options:
   -o, --owner         The repository owner.                             [string]
@@ -106,7 +106,6 @@ Options:
                                                                        [boolean]
   -i, --interactive   Prompt before (draft) release is created (default true)
                                                                        [boolean]
-  -s, --sound         Play sound when the release created              [boolean]
   -p, --publish       Publishes the release announcement to the defined Slack
                       channel                                          [boolean]
   -h, --help          Show help                                        [boolean]

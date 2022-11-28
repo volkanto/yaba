@@ -32,7 +32,6 @@
     "latest-version": "^7.0.0",
     "octokit": "^2.0.10",
     "ora": "^6.1.2",
-    "play-sound": "^1.1.5",
     "prompts": "^2.4.2",
     "semver": "^7.3.8",
     "supports-hyperlinks": "^2.3.0",

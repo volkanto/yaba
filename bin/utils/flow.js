@@ -31,14 +31,14 @@ export function checkRequiredEnvVariables() {
  */
 export async function checkInternetConnection() {
 
-        spinner.start('Checking internet connection...');
-        const isInternetUp = await isOnline();
-        if (!isInternetUp) {
-            spinner.fail('There is no internet connection!');
-            process.exit(0);
-        }
-        spinner.succeed('Internet connection established.');
-    },
+    spinner.start('Checking internet connection...');
+    const isInternetUp = await isOnline();
+    if (!isInternetUp) {
+        spinner.fail('There is no internet connection!');
+        process.exit(0);
+    }
+    spinner.succeed('Internet connection established.');
+}
 
 /**
  * fetches the last release
@@ -130,12 +130,12 @@ export async function prepareChangelog(owner, repo, base, head) {
             return item.commit.message;
         });
 
-        } catch(error) {
-            const errorResponseData = error.response.data;
-            spinner.fail(`Something went wrong while preparing the changelog! ${errorResponseData.message} -> ${errorResponseData.documentation_url}`);
-            process.exit(0);
-        }
-    },
+    } catch (error) {
+        const errorResponseData = error.response.data;
+        spinner.fail(`Something went wrong while preparing the changelog! ${errorResponseData.message} -> ${errorResponseData.documentation_url}`);
+        process.exit(0);
+    }
+}
 
 /**
  * fetches the commits from the {@code head} branch
@@ -189,17 +189,17 @@ export async function createRelease(owner, repo, draft, name, body, tag_name) {
 
         return newRelease.html_url;
 
-        } catch (error) {
-            let errorMessage = "\n";
-            let errors = error.response.data.errors;
-            let message = error.response.data.message;
-            errors.forEach(element => {
-                errorMessage += `\t* field: '${element.field}' - code: '${element.code}'`;
-            });
-            spinner.fail(`${message} while preparing the release! ${errorMessage}`);
-            process.exit(0);
-        }
-    },
+    } catch (error) {
+        let errorMessage = "\n";
+        let errors = error.response.data.errors;
+        let message = error.response.data.message;
+        errors.forEach(element => {
+            errorMessage += `\t* field: '${element.field}' - code: '${element.code}'`;
+        });
+        spinner.fail(`${message} while preparing the release! ${errorMessage}`);
+        process.exit(0);
+    }
+}
 
 /**
  * retrieves the username with the help of the authentication token

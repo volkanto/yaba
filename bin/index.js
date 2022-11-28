@@ -52,7 +52,7 @@ async function runYaba() {
         }
 
         // release completed, to prevent hanging forcing to exit
-        process.exit(1);
+        process.exit(0);
 
     } catch (error) {
         console.log(error);
@@ -85,7 +85,7 @@ async function checkHeadBranch(repoOwner, releaseRepo) {
     const headBranch = await flow.fetchHeadBranch(repoOwner, releaseRepo);
     if (headBranch == null) {
         console.log(kleur.red("Head branch can not be found! The release has been interrupted!"));
-        process.exit();
+        process.exit(0);
     }
     return headBranch;
 }
@@ -94,7 +94,7 @@ function checkDirectory() {
     // check if the current directory is git repo
     if (options.repo == undefined && !helper.isGitRepo()) {
         console.log(`The directory '${helper.retrieveCurrentDirectory()}' is not a Git repo.`);
-        process.exit();
+        process.exit(0);
     }
 }
 

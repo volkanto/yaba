@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
-const kleur = require("kleur");
-const helper = require('./utils/helper.js');
-const tool = require('./utils/tool.js');
-const flow = require('./utils/flow.js');
-const options = require('./utils/command.js').options;
-const templateUtils = require('./utils/template-utils.js');
-const boxen = require('boxen');
+import kleur from "kleur";
+import boxen from "boxen";
+import * as helper from "./utils/helper.js";
+import { checkUpdate } from "./utils/tool.js";
+import * as flow from "./utils/flow.js";
+import { options } from "./utils/command.js";
+import * as templateUtils from "./utils/template-utils.js";
 
 runYaba();
 
@@ -16,19 +16,18 @@ async function runYaba() {
 
         // https://www.npmjs.com/package/tiny-updater OR https://www.npmjs.com/package/update-notifier
         // can be used instead below method.
-
-        await tool.checkUpdate(); // check if the yaba cli has newer version
+        await checkUpdate(); // check if the yaba cli has newer version
+        
         // check required ENV variables
-
         flow.checkRequiredEnvVariables();
+
         // check if the current directory is git repo
+        checkDirectory();
 
-        checkDirectory()
         // check internet connection
-
         await flow.checkInternetConnection();
-        // prepare username, repoOwner and releaseRepo
 
+        // prepare username, repoOwner and releaseRepo
         const username = await flow.retrieveUsername();
         const repoOwner = helper.retrieveOwner(options.owner, username);
         const releaseRepo = helper.retrieveReleaseRepo(options.repo);

@@ -1,7 +1,11 @@
-const yargs = require("yargs");
-const package = require('../../package.json');
+import yargs from "yargs";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const packageInfo = require("../../package.json");
 
-const commands = yargs
+import { hideBin } from 'yargs/helpers';
+
+const commands = yargs(hideBin(process.argv))
     .usage("Usage: yaba -o <owner> -r <repository> -t <tag> -n <release-name> -b <body> -d <draft> " +
         "-c <changelog> -i <interactive> -s <sound> -p <publish>")
     .option("o", {alias: "owner", describe: "The repository owner.", type: "string"})
@@ -42,10 +46,7 @@ const commands = yargs
     .alias('h', 'help')
     .help('help')
     .alias('v', 'version')
-    .version(package.version)
+    .version(packageInfo.version)
     .argv;
 
-// yaba commands
-module.exports = {
-    options: commands
-}
+export { commands as options };

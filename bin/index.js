@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 import kleur from "kleur";
+import boxen from "boxen";
 import * as helper from "./utils/helper.js";
 import { checkUpdate } from "./utils/tool.js";
 import * as flow from "./utils/flow.js";
-import * as options from "./utils/command.js";
+import { options } from "./utils/command.js";
 import * as templateUtils from "./utils/template-utils.js";
-import boxen from "boxen";
 
 runYaba();
 
@@ -47,9 +47,9 @@ async function runYaba() {
         }
 
         // create the release
-        // if (canCreateRelease(changeLog)) {
-        //     await prepareRelease(changeLog, repoOwner, releaseRepo, lastRelease.tag_name);
-        // }
+        if (canCreateRelease(changeLog)) {
+            await prepareRelease(changeLog, repoOwner, releaseRepo, lastRelease.tag_name);
+        }
 
         // release completed, to prevent hanging forcing to exit
         process.exit(1);

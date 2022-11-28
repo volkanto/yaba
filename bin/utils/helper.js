@@ -1,11 +1,14 @@
 import fs from 'fs';
 import prompts from 'prompts';
-// const player = require("play-sound")(opts = {});
 import player from 'play-sound';
 import { isBlank, format as _format } from './string-utils.js';
 import path from 'path';
 import { format } from 'date-fns';
 import { appConstants } from './constants.js';
+import {fileURLToPath} from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 /**
  * returns the current date in 'yyyy-MM-dd' format

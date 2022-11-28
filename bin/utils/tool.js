@@ -3,16 +3,21 @@ import SemVer from 'semver';
 import boxen from 'boxen';
 import { format } from './string-utils.js';
 import latestVersion from 'latest-version';
-import _packageJson from "../../package.json" assert { type: "json" };
+
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const packageInfo = require("../../package.json");
+
 import { retrieveFile } from './template-utils.js';
 import { appConstants, defaultBoxOptions } from './constants.js';
+
 
 /**
  * checks if yaba has newer version.
  * @returns {Promise<void>}
  */
 export async function checkUpdate() {
-    const appVersion = _packageJson.version;
+    const appVersion = packageInfo.version;
     const lastVersion = await latestVersion('yaba-release-cli');
     if (SemVer.gt(lastVersion, appVersion)) {
         const message = prepareUpdateMessage(lastVersion, appVersion);

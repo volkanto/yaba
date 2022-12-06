@@ -9,7 +9,7 @@ on:
           default: ''
         tag-name:
           required: true
-          description: Type the tag name
+          description: Tag name
           default: ''
   
 env:

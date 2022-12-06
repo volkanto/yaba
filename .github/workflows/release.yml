@@ -1,0 +1,33 @@
+name: "Release with Yaba"
+
+on: 
+  workflow_dispatch:
+    inputs:
+        release-descriptor:
+          required: true
+          description: Release title
+          default: ''
+        tag-name:
+          required: true
+          description: Tag name
+          default: ''
+  
+env:
+  YABA_GITHUB_ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+  YABA_SLACK_HOOK_URL: ${{ secrets.YABA_SLACK_HOOK_URL }}
+  YABA_GITHUB_REPO_OWNER: ${{ github.repository_owner }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v3
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+      - name: Install Yaba
+        run: npm install -g yaba-release-cli
+      - name: Prepare release notes
+        run: yaba -i false -r ${{ github.event.repository.name }} -n '${{ github.event.inputs.release-descriptor }}' -t ${{ github.event.inputs.tag-name }}

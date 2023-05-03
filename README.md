@@ -2,7 +2,7 @@
 
 **Yaba** is a simple CLI tool that helps you manage releases of your GitHub projects.
 
-[![Build Status](https://img.shields.io/github/workflow/status/volkanto/yaba/CodeQL?style=flat-square&color=%23007a1f)](https://github.com/volkanto/yaba/actions)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/volkanto/yaba/codeql-analysis.yml)
 [![version](https://img.shields.io/npm/v/yaba-release-cli.svg?style=flat-square)](https://npmjs.org/yaba-release-cli)
 [![dependancies](https://img.shields.io/librariesio/release/npm/yaba-release-cli?color=%23007a1f&style=flat-square)](https://libraries.io/npm/yaba-release-cli)
 [![downloads](https://img.shields.io/npm/dm/yaba-release-cli?style=flat-square&color=%23007a1f)](https://npmcharts.com/compare/yaba-release-cli)

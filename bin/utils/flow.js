@@ -71,14 +71,13 @@ export async function fetchLastRelease(owner, repo) {
  */
 export async function fetchHeadBranch(owner, repo) {
     spinner.start('Fetching head branch...');
-    const { data: headBranch } = await octokit.request('GET /repos/{owner}/{repo}/branches/{branch}', {
+    const { data: repository } = await octokit.request('GET /repos/{owner}/{repo}', {
         owner: owner,
-        repo: repo,
-        branch: 'master'
+        repo: repo
     });
 
-    spinner.succeed(`Head branch: ${kleur.blue().bold().underline(headBranch.name)}`);
-    return headBranch.name;
+    spinner.succeed(`Head branch: ${kleur.blue().bold().underline(repository.default_branch)}`);
+    return repository.default_branch;
 }
 
 /**

@@ -99,7 +99,8 @@ Options:
   -n, --name, --release-name  The name of the release.                   [string]
   -b, --body          Text describing the contents of the tag. If not provided,
                       the default changelog will be generated with the usage of
-                      the difference of master and latest release.      [string]
+                      the difference of default branch and latest release.
+                                                                       [string]
   -d, --draft                 Creates the release as draft.             [boolean]
   -c, --changelog     Shows only changelog without creating the release.
                                                                        [boolean]
@@ -147,7 +148,7 @@ below pattern:
 -o: authenticated_user
 -t: prod_global_YYYYMMDD.1
 -n: Global release YYYY-MM-DD
--b: Commits between last release and master/main branch
+-b: Commits between last release and default branch
 ```
 
 If a repository has no previous release, `yaba` now falls back to the head branch for changelog comparison and still prepares the release.

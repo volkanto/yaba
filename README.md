@@ -90,26 +90,35 @@ Run `yaba` with `--help` options:
 
 ```shell
 ➜  ~ yaba --help
-Usage: yaba -o <owner> -r <repository> -t <tag> -n <release-name> -b <body> -d
-<draft> -c <changelog> -i <interactive> -p <publish>
+Usage: yaba release create [options]
 
 Options:
-  -o, --owner         The repository owner.                             [string]
-  -r, --repo          The repository name.                              [string]
-  -t, --tag           The name of the tag.                              [string]
-  -n, --release-name  The name of the release.                          [string]
+  -o, --owner                 The repository owner.                      [string]
+  -r, --repo                  The repository name.                       [string]
+  -t, --tag                   The name of the tag.                       [string]
+  -n, --name, --release-name  The name of the release.                   [string]
   -b, --body          Text describing the contents of the tag. If not provided,
                       the default changelog will be generated with the usage of
                       the difference of master and latest release.      [string]
-  -d, --draft         Creates the release as draft.                    [boolean]
+  -d, --draft                 Creates the release as draft.             [boolean]
   -c, --changelog     Shows only changelog without creating the release.
                                                                        [boolean]
-  -i, --interactive   Prompt before (draft) release is created (default true)
+  -i, --interactive           Prompt before (draft) release is created (default true)
                                                                        [boolean]
-  -p, --publish       Publishes the release announcement to the defined Slack
-                      channel                                          [boolean]
-  -h, --help          Show help                                        [boolean]
-  -v, --version       Show version number                              [boolean]
+      --yes                   Skip confirmation prompt and create release
+                              directly.                                 [boolean]
+      --notify                Send notifications after release is created.
+                              [choices: "slack"]
+  -p, --publish               Publishes the release announcement to the defined Slack
+                              channel                                   [boolean]
+  -h, --help                  Show help                                 [boolean]
+  -v, --version               Show version number                       [boolean]
+```
+
+Create release with the new command format:
+
+```shell
+yaba release create --repo my-repo --notify slack --yes
 ```
 
 You can run `yaba` from a git directory or any other directories which is not a git repo.
@@ -128,8 +137,8 @@ below pattern:
 -b: Commits between last release and master/main branch
 ```
 
-> **:bulb:** If you want to bypass the prompt that is before creating the actual release,
-> you can use `-i false` flag. This could be useful if you use `yaba` in your automation tools.
+> **:bulb:** If you want to bypass the prompt before creating the actual release,
+> you can use `--yes`. This is useful in automation tools.
 
 ## Run Locally
 

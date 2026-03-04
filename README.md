@@ -138,8 +138,8 @@ yaba release preview --repo my-repo
 You can run `yaba` from a git directory or any other directories which is not a git repo.
 
 If you are in a git repo and if you want to prepare the release for that repo, you don't need to specify the repo name
-with the command. The command will automatically detect the current directory and if it is a git repository `yaba` will
-use it as `repo` for the command.
+with the command. The command will try to detect the repository name from `remote.origin.url` and use it as `repo` for
+the command.
 
 By default, if you don't specify `-o`, `-t`, `-n` and `-b` the command will prepare default values for them with the
 below pattern:

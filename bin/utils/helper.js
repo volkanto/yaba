@@ -167,16 +167,15 @@ export async function releaseCreatePermit(interactive) {
  * @param message the changelog to send to Slack channel(s)
  * @param releaseUrl the release tag url on Github
  * @param releaseName the title of the release
- * @returns {string} the formatted JSON to send to Slack
+ * @returns {object} the formatted JSON payload to send to Slack
  */
 export function prepareSlackMessage(repo, message, releaseUrl, releaseName) {
 
     const slackMessageTemplatePath = path.join(__dirname, appConstants.SLACK_POST_TEMPLATE);
-    let templateFile = fs.readFileSync(slackMessageTemplatePath);
-    let templateJson = JSON.parse(templateFile);
-    let slackMessageTemplate = JSON.stringify(templateJson);
+    const templateFile = fs.readFileSync(slackMessageTemplatePath, 'utf8');
+    const templateJson = JSON.parse(templateFile);
 
-    return _format(slackMessageTemplate, {
+    return applyTemplateValues(templateJson, {
         repo: repo,
         changelog: message.trim(),
         releaseUrl: releaseUrl,
@@ -220,4 +219,23 @@ function retrieveRepoNameFromRemote(remoteUrl) {
 
     const repository = segments[segments.length - 1].replace(/\.git$/, '');
     return isBlank(repository) ? null : repository;
+}
+
+function applyTemplateValues(value, replacements) {
+    if (Array.isArray(value)) {
+        return value.map(item => applyTemplateValues(item, replacements));
+    }
+
+    if (value && typeof value === 'object') {
+        const mappedEntries = Object.entries(value).map(([key, nestedValue]) => {
+            return [key, applyTemplateValues(nestedValue, replacements)];
+        });
+        return Object.fromEntries(mappedEntries);
+    }
+
+    if (typeof value === 'string') {
+        return _format(value, replacements);
+    }
+
+    return value;
 }

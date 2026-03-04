@@ -1,24 +1,32 @@
 name: Publish Package to npmjs
+
 on:
   release:
-    types: [created]
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run validation only (do not publish to npm)"
+        required: false
+        type: boolean
+        default: true
+      tag:
+        description: "Optional tag to validate (example: v1.2.3)"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '16.x'
-      - run: npm i
-
   publish:
-    needs: build
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
+    concurrency:
+      group: npm-publish-${{ github.event.release.tag_name || github.ref_name }}
+      cancel-in-progress: false
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,6 +45,9 @@ jobs:
             echo "npm ${NPM_VERSION} is too old for trusted publishing (requires >=11.5.1)."
             exit 1
           fi
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Resolve tag name
         id: tag
@@ -93,3 +104,11 @@ jobs:
       - name: Publish to npm
         if: steps.npm_check.outputs.already_published != 'true' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
         run: npm publish --access public --provenance
+
+      - name: Validate npm publish (dry run)
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run
+        run: npm publish --access public --dry-run
+
+      - name: Skip publish (already published)
+        if: steps.npm_check.outputs.already_published == 'true'
+        run: echo "This package version is already published. Skipping."

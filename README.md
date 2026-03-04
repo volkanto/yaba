@@ -90,7 +90,7 @@ Run `yaba` with `--help` options:
 
 ```shell
 ➜  ~ yaba --help
-Usage: yaba <release|doctor> [options]
+Usage: yaba <release|doctor|config> [options]
 
 Options:
   -o, --owner                 The repository owner.                      [string]
@@ -116,6 +116,8 @@ Options:
                               channel                                   [boolean]
       --format                Output format.
                               [choices: "human", "json"] [default: "human"]
+      --force                 Overwrite generated files when they already exist.
+                                                                       [boolean]
   -h, --help                  Show help                                 [boolean]
   -v, --version               Show version number                       [boolean]
 ```
@@ -125,6 +127,7 @@ Supported commands:
 - `yaba release create`: creates a release on GitHub.
 - `yaba release preview`: prepares and prints release details without creating a release.
 - `yaba doctor`: runs environment and connectivity diagnostics.
+- `yaba config init`: creates a `yaba.config.json` template in the current directory.
 
 Create release with the new command format:
 
@@ -154,6 +157,18 @@ Run setup diagnostics in JSON format:
 
 ```shell
 yaba doctor --format json
+```
+
+Create local config template:
+
+```shell
+yaba config init
+```
+
+Overwrite existing config template:
+
+```shell
+yaba config init --force
 ```
 
 When `--format json` is used, `yaba` prints machine-readable command results to `stdout` and errors to `stderr`.

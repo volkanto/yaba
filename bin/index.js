@@ -18,7 +18,11 @@ async function runYaba() {
         flow.setOutputFormat(options.outputFormat);
 
         if (!isSupportedReleaseCommand(options)) {
-            throw createError("Unsupported command. Use 'yaba release create --help' or 'yaba release preview --help' for usage details.", exitCodes.VALIDATION);
+            throw createError("Unsupported command. Use 'yaba release create --help', 'yaba release preview --help', or 'yaba doctor --help' for usage details.", exitCodes.VALIDATION);
+        }
+
+        if (isDoctorCommand()) {
+            return await runDoctor();
         }
 
         // https://www.npmjs.com/package/tiny-updater OR https://www.npmjs.com/package/update-notifier
@@ -171,6 +175,117 @@ async function prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastRel
     }
 }
 
+async function runDoctor() {
+    const checks = [];
+    const tokenConfigured = helper.requiredEnvVariablesExist();
+    const gitRepo = helper.isGitRepo();
+    const detectedRepo = gitRepo ? helper.retrieveCurrentRepoName() : null;
+    const slackEndpoints = (process.env.YABA_SLACK_HOOK_URL || '')
+        .split(',')
+        .map(item => item.trim())
+        .filter(Boolean);
+
+    checks.push(createDoctorCheck(
+        'env.githubToken',
+        tokenConfigured,
+        tokenConfigured
+            ? 'YABA_GITHUB_ACCESS_TOKEN is configured.'
+            : 'YABA_GITHUB_ACCESS_TOKEN is missing.',
+        true,
+        exitCodes.VALIDATION
+    ));
+
+    checks.push(createDoctorCheck(
+        'git.repository',
+        gitRepo,
+        gitRepo
+            ? `Git repository detected (${detectedRepo}).`
+            : 'Current directory is not a Git repository.',
+        true,
+        exitCodes.VALIDATION
+    ));
+
+    checks.push(createDoctorCheck(
+        'env.slackHook',
+        slackEndpoints.length > 0,
+        slackEndpoints.length > 0
+            ? `YABA_SLACK_HOOK_URL configured with ${slackEndpoints.length} endpoint(s).`
+            : 'YABA_SLACK_HOOK_URL is not configured.',
+        false,
+        exitCodes.VALIDATION
+    ));
+
+    try {
+        await flow.checkInternetConnection();
+        checks.push(createDoctorCheck(
+            'network.connectivity',
+            true,
+            'Internet connectivity check passed.',
+            true,
+            exitCodes.NETWORK
+        ));
+    } catch (error) {
+        const normalizedError = normalizeError(error);
+        checks.push(createDoctorCheck(
+            'network.connectivity',
+            false,
+            normalizedError.message,
+            true,
+            normalizedError.exitCode
+        ));
+    }
+
+    if (tokenConfigured) {
+        try {
+            const username = await flow.retrieveUsername();
+            checks.push(createDoctorCheck(
+                'github.auth',
+                true,
+                `Authenticated as ${username}.`,
+                true,
+                exitCodes.AUTH
+            ));
+        } catch (error) {
+            const normalizedError = normalizeError(error);
+            checks.push(createDoctorCheck(
+                'github.auth',
+                false,
+                normalizedError.message,
+                true,
+                normalizedError.exitCode
+            ));
+        }
+    } else {
+        checks.push(createDoctorCheck(
+            'github.auth',
+            false,
+            'Skipped because GitHub token is missing.',
+            false,
+            exitCodes.VALIDATION,
+            true
+        ));
+    }
+
+    const exitCode = resolveDoctorExitCode(checks);
+    if (isJsonOutput()) {
+        printJson({
+            command: 'doctor',
+            status: exitCode === exitCodes.SUCCESS ? 'success' : 'failure',
+            exitCode: exitCode,
+            checks: checks.map(check => ({
+                name: check.name,
+                status: check.skipped ? 'skipped' : check.ok ? 'pass' : 'fail',
+                required: check.required,
+                message: check.message
+            }))
+        });
+    } else {
+        printDoctorSummary(checks, exitCode);
+    }
+
+    return exitCode;
+}
+
 async function checkHeadBranch(repoOwner, releaseRepo) {
     const headBranch = await flow.fetchHeadBranch(repoOwner, releaseRepo);
     if (headBranch == null) {
@@ -243,6 +358,10 @@ function isReleasePreviewCommand() {
     return options.releaseCommand === "preview";
 }
 
+function isDoctorCommand() {
+    return options.commandName === "doctor";
+}
+
 function resolveLastReleaseTag(lastRelease, headBranch) {
     return lastRelease?.tag_name || headBranch;
 }
@@ -272,6 +391,70 @@ function printJson(payload) {
 
 function isJsonOutput() {
     return options.outputFormat === "json";
+}
+
+function createDoctorCheck(name, ok, message, required, exitCode, skipped = false) {
+    return {
+        name: name,
+        ok: ok,
+        message: message,
+        required: required,
+        exitCode: exitCode,
+        skipped: skipped
+    };
+}
+
+function resolveDoctorExitCode(checks) {
+    const failedRequiredChecks = checks.filter(check => check.required && !check.ok && !check.skipped);
+    if (failedRequiredChecks.length === 0) {
+        return exitCodes.SUCCESS;
+    }
+
+    const precedence = [
+        exitCodes.AUTH,
+        exitCodes.NETWORK,
+        exitCodes.UPSTREAM,
+        exitCodes.VALIDATION,
+        exitCodes.INTERNAL
+    ];
+
+    for (const code of precedence) {
+        if (failedRequiredChecks.some(check => check.exitCode === code)) {
+            return code;
+        }
+    }
+
+    return exitCodes.INTERNAL;
+}
+
+function printDoctorSummary(checks, exitCode) {
+    const body = checks.map(check => {
+        const status = check.skipped
+            ? kleur.gray('SKIP')
+            : check.ok
+                ? kleur.green('PASS')
+                : check.required
+                    ? kleur.red('FAIL')
+                    : kleur.yellow('WARN');
+        return `${status} ${check.name}: ${check.message}`;
+    }).join('\n');
+
+    const doctorBoxOptions = {
+        padding: 1,
+        title: 'Doctor',
+        titleAlignment: 'left',
+        align: 'left',
+        borderColor: exitCode === exitCodes.SUCCESS ? 'green' : 'yellow',
+        borderStyle: 'round'
+    };
+
+    console.log('\n' + boxen(body, doctorBoxOptions));
+    if (exitCode === exitCodes.SUCCESS) {
+        console.log(kleur.green('\nDoctor checks passed.'));
+    } else {
+        const failureCount = checks.filter(check => check.required && !check.ok && !check.skipped).length;
+        console.log(kleur.red(`\nDoctor detected ${failureCount} required issue(s).`));
+    }
 }
 
 async function resolveOwner() {

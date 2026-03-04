@@ -7,9 +7,10 @@ import { hideBin } from 'yargs/helpers';
 
 const commands = yargs(hideBin(process.argv))
     .scriptName("yaba")
-    .usage("Usage: yaba release <create|preview> [options]")
+    .usage("Usage: yaba <release|doctor> [options]")
     .command("release create", "Create a GitHub release for a repository")
     .command("release preview", "Preview release details without creating a GitHub release")
+    .command("doctor", "Run environment and connectivity diagnostics")
     .option("o", {alias: "owner", describe: "The repository owner.", type: "string"})
     .option("r", {alias: "repo", describe: "The repository name.", type: "string"})
     .option("t", {alias: "tag", describe: "The name of the tag.", type: "string"})
@@ -76,26 +77,33 @@ const normalizedOptions = normalizeOptions(commands);
 function normalizeOptions(parsed) {
     const normalized = { ...parsed };
     const noPrompt = parsed["no-prompt"] === true || parsed.noPrompt === true;
-    const releaseCommand = resolveReleaseCommand(parsed);
+    const commandName = resolveCommand(parsed);
 
     normalized.releaseName = parsed.name ?? parsed["release-name"];
     normalized.publish = parsed.publish === true || parsed.notify === "slack";
     normalized.interactive = parsed.yes === true || noPrompt ? false : parsed.interactive;
-    normalized.releaseCommand = releaseCommand;
+    normalized.commandName = commandName;
+    normalized.releaseCommand = commandName?.startsWith("release.")
+        ? commandName.split(".")[1]
+        : null;
     normalized.outputFormat = parsed.format || "human";
 
     return normalized;
 }
 
-function resolveReleaseCommand(parsed) {
+function resolveCommand(parsed) {
     const positional = (parsed._ || []).map(item => `${item}`);
     if (positional.length === 0) {
-        return "create";
+        return "release.create";
+    }
+
+    if (positional.length === 1 && positional[0] === "doctor") {
+        return "doctor";
     }
 
     if (positional.length === 2 && positional[0] === "release") {
         if (positional[1] === "create" || positional[1] === "preview") {
-            return positional[1];
+            return `release.${positional[1]}`;
         }
     }
 
@@ -103,7 +111,7 @@ function resolveReleaseCommand(parsed) {
 }
 
 function isSupportedReleaseCommand(parsed) {
-    return resolveReleaseCommand(parsed) !== null;
+    return resolveCommand(parsed) !== null;
 }
 
 export { normalizedOptions as options, isSupportedReleaseCommand };

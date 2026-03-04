@@ -21,7 +21,7 @@ const commands = yargs(hideBin(process.argv))
     .option("b", {
         alias: "body",
         describe: "Text describing the contents of the tag. If not provided, the default changelog " +
-            "will be generated with the usage of the difference of master and latest release.",
+            "will be generated with the usage of the difference of default branch and latest release.",
         type: "string"
     })
     .option("d", {

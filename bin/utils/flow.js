@@ -12,6 +12,12 @@ const octokit = new Octokit({
     auth: process.env.YABA_GITHUB_ACCESS_TOKEN
 });
 const spinner = ora();
+let outputFormat = 'human';
+
+export function setOutputFormat(format = 'human') {
+    outputFormat = format;
+    spinner.isSilent = outputFormat === 'json';
+}
 
 /**
  * checks if the all required environment variables in place.

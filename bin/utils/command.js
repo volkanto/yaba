@@ -59,6 +59,12 @@ const commands = yargs(hideBin(process.argv))
         describe: "Publishes the release announcement to the defined Slack channel",
         type: "boolean"
     })
+    .option("format", {
+        describe: "Output format.",
+        choices: ["human", "json"],
+        type: "string",
+        default: "human"
+    })
     .alias('h', 'help')
     .help('help')
     .alias('v', 'version')
@@ -76,6 +82,7 @@ function normalizeOptions(parsed) {
     normalized.publish = parsed.publish === true || parsed.notify === "slack";
     normalized.interactive = parsed.yes === true || noPrompt ? false : parsed.interactive;
     normalized.releaseCommand = releaseCommand;
+    normalized.outputFormat = parsed.format || "human";
 
     return normalized;
 }

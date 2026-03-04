@@ -5,7 +5,7 @@ import boxen from "boxen";
 import * as helper from "./utils/helper.js";
 import { checkUpdate } from "./utils/tool.js";
 import * as flow from "./utils/flow.js";
-import { options } from "./utils/command.js";
+import { options, isReleaseCreateCommand } from "./utils/command.js";
 import * as templateUtils from "./utils/template-utils.js";
 
 runYaba();
@@ -13,6 +13,10 @@ runYaba();
 async function runYaba() {
 
     try {
+        if (!isReleaseCreateCommand(options)) {
+            console.log(kleur.red("Unsupported command. Use 'yaba release create --help' for usage details."));
+            process.exit(1);
+        }
 
         // https://www.npmjs.com/package/tiny-updater OR https://www.npmjs.com/package/update-notifier
         // can be used instead below method.
@@ -122,4 +126,3 @@ async function resolveOwner() {
     const username = await flow.retrieveUsername();
     return helper.retrieveOwner(null, username);
 }
-

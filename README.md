@@ -81,7 +81,7 @@ If the above variable is set and the `-p` command given while running the comman
 given Slack channel. You can find detailed information in the [Command Line Usage](#command-line-usage) section.
 
 ```shell
-yaba -p
+yaba release create -p
 ```
 
 ## Command Line Usage
@@ -90,7 +90,7 @@ Run `yaba` with `--help` options:
 
 ```shell
 ➜  ~ yaba --help
-Usage: yaba release create [options]
+Usage: yaba release <create|preview> [options]
 
 Options:
   -o, --owner                 The repository owner.                      [string]
@@ -117,10 +117,21 @@ Options:
   -v, --version               Show version number                       [boolean]
 ```
 
+Supported commands:
+
+- `yaba release create`: creates a release on GitHub.
+- `yaba release preview`: prepares and prints release details without creating a release.
+
 Create release with the new command format:
 
 ```shell
 yaba release create --repo my-repo --notify slack --no-prompt
+```
+
+Preview release details without side effects:
+
+```shell
+yaba release preview --repo my-repo
 ```
 
 You can run `yaba` from a git directory or any other directories which is not a git repo.

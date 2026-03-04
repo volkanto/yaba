@@ -107,6 +107,8 @@ Options:
                                                                        [boolean]
       --yes                   Skip confirmation prompt and create release
                               directly.                                 [boolean]
+      --no-prompt             Skip release confirmation prompt (same as --yes).
+                                                                       [boolean]
       --notify                Send notifications after release is created.
                               [choices: "slack"]
   -p, --publish               Publishes the release announcement to the defined Slack
@@ -118,7 +120,7 @@ Options:
 Create release with the new command format:
 
 ```shell
-yaba release create --repo my-repo --notify slack --yes
+yaba release create --repo my-repo --notify slack --no-prompt
 ```
 
 You can run `yaba` from a git directory or any other directories which is not a git repo.
@@ -138,7 +140,7 @@ below pattern:
 ```
 
 > **:bulb:** If you want to bypass the prompt before creating the actual release,
-> you can use `--yes`. This is useful in automation tools.
+> you can use `--yes` or `--no-prompt`. This is useful in automation tools.
 
 ## Run Locally
 

@@ -43,6 +43,11 @@ const commands = yargs(hideBin(process.argv))
         type: "boolean",
         default: false
     })
+    .option("no-prompt", {
+        describe: "Skip release confirmation prompt (same behavior as --yes).",
+        type: "boolean",
+        default: false
+    })
     .option("notify", {
         describe: "Send notifications after release is created.",
         choices: ["slack"],
@@ -63,10 +68,11 @@ const normalizedOptions = normalizeOptions(commands);
 
 function normalizeOptions(parsed) {
     const normalized = { ...parsed };
+    const noPrompt = parsed["no-prompt"] === true || parsed.noPrompt === true;
 
     normalized.releaseName = parsed.name ?? parsed["release-name"];
     normalized.publish = parsed.publish === true || parsed.notify === "slack";
-    normalized.interactive = parsed.yes === true ? false : parsed.interactive;
+    normalized.interactive = parsed.yes === true || noPrompt ? false : parsed.interactive;
 
     return normalized;
 }

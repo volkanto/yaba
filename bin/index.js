@@ -2,6 +2,8 @@
 
 import kleur from "kleur";
 import boxen from "boxen";
+import fs from "fs";
+import path from "path";
 import * as helper from "./utils/helper.js";
 import { checkUpdate } from "./utils/tool.js";
 import * as flow from "./utils/flow.js";
@@ -18,11 +20,15 @@ async function runYaba() {
         flow.setOutputFormat(options.outputFormat);
 
         if (!isSupportedReleaseCommand(options)) {
-            throw createError("Unsupported command. Use 'yaba release create --help', 'yaba release preview --help', or 'yaba doctor --help' for usage details.", exitCodes.VALIDATION);
+            throw createError("Unsupported command. Use 'yaba release create --help', 'yaba release preview --help', 'yaba doctor --help', or 'yaba config init --help' for usage details.", exitCodes.VALIDATION);
         }
 
         if (isDoctorCommand()) {
             return await runDoctor();
+        }
+
+        if (isConfigInitCommand()) {
+            return runConfigInit();
         }
 
         // https://www.npmjs.com/package/tiny-updater OR https://www.npmjs.com/package/update-notifier
@@ -286,6 +292,32 @@ async function runDoctor() {
     return exitCode;
 }
 
+function runConfigInit() {
+    const configPath = path.join(process.cwd(), 'yaba.config.json');
+    const alreadyExists = fs.existsSync(configPath);
+
+    if (alreadyExists && options.force !== true) {
+        throw createError(`Config file already exists at '${configPath}'. Use '--force' to overwrite it.`, exitCodes.VALIDATION);
+    }
+
+    const configTemplate = buildDefaultConfigTemplate();
+    fs.writeFileSync(configPath, `${JSON.stringify(configTemplate, null, 2)}\n`, 'utf8');
+
+    const overwritten = alreadyExists && options.force === true;
+    if (isJsonOutput()) {
+        printJson({
+            command: 'config.init',
+            status: 'success',
+            path: configPath,
+            overwritten: overwritten
+        });
+    } else {
+        printConfigInitSummary(configPath, overwritten);
+    }
+
+    return exitCodes.SUCCESS;
+}
+
 async function checkHeadBranch(repoOwner, releaseRepo) {
     const headBranch = await flow.fetchHeadBranch(repoOwner, releaseRepo);
     if (headBranch == null) {
@@ -360,6 +392,10 @@ function isReleasePreviewCommand() {
 
 function isDoctorCommand() {
     return options.commandName === "doctor";
+}
+
+function isConfigInitCommand() {
+    return options.commandName === "config.init";
 }
 
 function resolveLastReleaseTag(lastRelease, headBranch) {
@@ -455,6 +491,53 @@ function printDoctorSummary(checks, exitCode) {
         const failureCount = checks.filter(check => check.required && !check.ok && !check.skipped).length;
         console.log(kleur.red(`\nDoctor detected ${failureCount} required issue(s).`));
     }
+}
+
+function printConfigInitSummary(configPath, overwritten) {
+    const lines = [
+        `Config file ${overwritten ? 'overwritten' : 'created'} at:`,
+        `${configPath}`,
+        '',
+        'Next steps:',
+        '1) Update values in yaba.config.json for your repository defaults.',
+        '2) Keep secrets in environment variables (YABA_GITHUB_ACCESS_TOKEN, YABA_SLACK_HOOK_URL).'
+    ].join('\n');
+
+    const configBoxOptions = {
+        padding: 1,
+        title: 'Config Init',
+        titleAlignment: 'left',
+        align: 'left',
+        borderColor: 'blue',
+        borderStyle: 'round'
+    };
+
+    console.log('\n' + boxen(lines, configBoxOptions));
+}
+
+function buildDefaultConfigTemplate() {
+    return {
+        github: {
+            owner: null
+        },
+        release: {
+            repo: null,
+            tagPattern: "prod_global_{yyyyMMdd}.1",
+            namePattern: "Global release {yyyy-MM-dd}",
+            draft: false,
+            firstReleaseMaxCommits: 50
+        },
+        notifications: {
+            slack: {
+                enabled: false
+            }
+        },
+        output: {
+            format: "human",
+            color: true,
+            verbose: false
+        }
+    };
 }
 
 async function resolveOwner() {

@@ -7,10 +7,11 @@ import { hideBin } from 'yargs/helpers';
 
 const commands = yargs(hideBin(process.argv))
     .scriptName("yaba")
-    .usage("Usage: yaba <release|doctor> [options]")
+    .usage("Usage: yaba <release|doctor|config> [options]")
     .command("release create", "Create a GitHub release for a repository")
     .command("release preview", "Preview release details without creating a GitHub release")
     .command("doctor", "Run environment and connectivity diagnostics")
+    .command("config init", "Create yaba.config.json in the current directory")
     .option("o", {alias: "owner", describe: "The repository owner.", type: "string"})
     .option("r", {alias: "repo", describe: "The repository name.", type: "string"})
     .option("t", {alias: "tag", describe: "The name of the tag.", type: "string"})
@@ -66,6 +67,11 @@ const commands = yargs(hideBin(process.argv))
         type: "string",
         default: "human"
     })
+    .option("force", {
+        describe: "Overwrite generated files when they already exist.",
+        type: "boolean",
+        default: false
+    })
     .alias('h', 'help')
     .help('help')
     .alias('v', 'version')
@@ -99,6 +105,10 @@ function resolveCommand(parsed) {
 
     if (positional.length === 1 && positional[0] === "doctor") {
         return "doctor";
+    }
+
+    if (positional.length === 2 && positional[0] === "config" && positional[1] === "init") {
+        return "config.init";
     }
 
     if (positional.length === 2 && positional[0] === "release") {

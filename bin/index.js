@@ -7,15 +7,16 @@ import { checkUpdate } from "./utils/tool.js";
 import * as flow from "./utils/flow.js";
 import { options, isSupportedReleaseCommand } from "./utils/command.js";
 import * as templateUtils from "./utils/template-utils.js";
+import { exitCodes } from "./utils/exit-codes.js";
+import { createError, normalizeError } from "./utils/errors.js";
 
-runYaba();
+runYaba().then(exitCode => process.exit(exitCode));
 
 async function runYaba() {
 
     try {
         if (!isSupportedReleaseCommand(options)) {
-            console.log(kleur.red("Unsupported command. Use 'yaba release create --help' or 'yaba release preview --help' for usage details."));
-            process.exit(1);
+            throw createError("Unsupported command. Use 'yaba release create --help' or 'yaba release preview --help' for usage details.", exitCodes.VALIDATION);
         }
 
         // https://www.npmjs.com/package/tiny-updater OR https://www.npmjs.com/package/update-notifier
@@ -47,7 +48,7 @@ async function runYaba() {
         // preview release without creating it
         if (isReleasePreviewCommand()) {
             printReleasePreview(changeLog, repoOwner, releaseRepo, lastRelease, headBranch);
-            process.exit(0);
+            return exitCodes.SUCCESS;
         }
 
         // show only changelog
@@ -62,10 +63,12 @@ async function runYaba() {
         }
 
         // release completed, to prevent hanging forcing to exit
-        process.exit(0);
+        return exitCodes.SUCCESS;
 
     } catch (error) {
-        console.log(error);
+        const normalizedError = normalizeError(error);
+        console.error(kleur.red(normalizedError.message));
+        return normalizedError.exitCode;
     }
 }
 
@@ -84,15 +87,14 @@ async function prepareRelease(changeLog, repoOwner, releaseRepo, lastReleaseTag)
         await flow.publishToSlack(options.publish, releaseRepo, preparedChangeLog, releaseUrl, releaseName);
 
     } else {
-        console.log('Release was not prepared!');
+        throw createError('Release was not prepared. Confirmation prompt was declined.', exitCodes.VALIDATION);
     }
 }
 
 async function checkHeadBranch(repoOwner, releaseRepo) {
     const headBranch = await flow.fetchHeadBranch(repoOwner, releaseRepo);
     if (headBranch == null) {
-        console.log(kleur.red("Head branch can not be found! The release has been interrupted!"));
-        process.exit(1);
+        throw createError("Head branch can not be found! The release has been interrupted!", exitCodes.UPSTREAM);
     }
     return headBranch;
 }
@@ -100,8 +102,7 @@ async function checkHeadBranch(repoOwner, releaseRepo) {
 function checkDirectory() {
     // check if the current directory is git repo
     if (options.repo == undefined && !helper.isGitRepo()) {
-        console.log(`The directory '${helper.retrieveCurrentDirectory()}' is not a Git repo.`);
-        process.exit(1);
+        throw createError(`The directory '${helper.retrieveCurrentDirectory()}' is not a Git repo.`, exitCodes.VALIDATION);
     }
 }
 

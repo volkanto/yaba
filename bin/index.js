@@ -57,7 +57,8 @@ async function runYaba() {
 
         // create the release
         if (canCreateRelease(changeLog)) {
-            await prepareRelease(changeLog, repoOwner, releaseRepo, lastRelease.tag_name);
+            const lastReleaseTag = resolveLastReleaseTag(lastRelease, headBranch);
+            await prepareRelease(changeLog, repoOwner, releaseRepo, lastReleaseTag);
         }
 
         // release completed, to prevent hanging forcing to exit

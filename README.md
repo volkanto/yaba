@@ -150,6 +150,8 @@ below pattern:
 -b: Commits between last release and master/main branch
 ```
 
+If a repository has no previous release, `yaba` now falls back to the head branch for changelog comparison and still prepares the release.
+
 > **:bulb:** If you want to bypass the prompt before creating the actual release,
 > you can use `--yes` or `--no-prompt`. This is useful in automation tools.
 

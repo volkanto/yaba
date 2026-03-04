@@ -90,7 +90,7 @@ Run `yaba` with `--help` options:
 
 ```shell
 ➜  ~ yaba --help
-Usage: yaba release <create|preview> [options]
+Usage: yaba <release|doctor> [options]
 
 Options:
   -o, --owner                 The repository owner.                      [string]
@@ -124,6 +124,7 @@ Supported commands:
 
 - `yaba release create`: creates a release on GitHub.
 - `yaba release preview`: prepares and prints release details without creating a release.
+- `yaba doctor`: runs environment and connectivity diagnostics.
 
 Create release with the new command format:
 
@@ -141,6 +142,18 @@ Preview release details in JSON format:
 
 ```shell
 yaba release preview --repo my-repo --format json
+```
+
+Run setup diagnostics:
+
+```shell
+yaba doctor
+```
+
+Run setup diagnostics in JSON format:
+
+```shell
+yaba doctor --format json
 ```
 
 When `--format json` is used, `yaba` prints machine-readable command results to `stdout` and errors to `stderr`.

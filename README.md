@@ -115,7 +115,8 @@ Options:
   -p, --publish               Publishes the release announcement to the defined Slack
                               channel                                   [boolean]
       --format                Output format.
-                              [choices: "human", "json"] [default: "human"]
+                              [choices: "human", "json"]
+      --config                Path to config file.                        [string]
       --force                 Overwrite generated files when they already exist.
                                                                        [boolean]
   -h, --help                  Show help                                 [boolean]
@@ -171,7 +172,19 @@ Overwrite existing config template:
 yaba config init --force
 ```
 
+Create config template at a custom location:
+
+```shell
+yaba config init --config ./config/yaba.config.json
+```
+
 When `--format json` is used, `yaba` prints machine-readable command results to `stdout` and errors to `stderr`.
+
+Config precedence for runtime values is:
+
+```text
+flags > env vars > project config (./yaba.config.json) > user config (~/.config/yaba/config.json) > defaults
+```
 
 You can run `yaba` from a git directory or any other directories which is not a git repo.
 

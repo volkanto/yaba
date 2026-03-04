@@ -4,6 +4,7 @@ import kleur from "kleur";
 import boxen from "boxen";
 import fs from "fs";
 import path from "path";
+import { format as formatDate } from "date-fns";
 import * as helper from "./utils/helper.js";
 import { checkUpdate } from "./utils/tool.js";
 import * as flow from "./utils/flow.js";
@@ -12,23 +13,30 @@ import * as templateUtils from "./utils/template-utils.js";
 import { exitCodes } from "./utils/exit-codes.js";
 import { createError, normalizeError } from "./utils/errors.js";
 
+let runtimeOutputFormat = "human";
+
 runYaba().then(exitCode => process.exit(exitCode));
 
 async function runYaba() {
 
     try {
-        flow.setOutputFormat(options.outputFormat);
+        setRuntimeOutputFormat(resolveOutputFormatCandidate(options.outputFormat));
+        flow.setOutputFormat(runtimeOutputFormat);
 
         if (!isSupportedReleaseCommand(options)) {
             throw createError("Unsupported command. Use 'yaba release create --help', 'yaba release preview --help', 'yaba doctor --help', or 'yaba config init --help' for usage details.", exitCodes.VALIDATION);
         }
 
-        if (isDoctorCommand()) {
-            return await runDoctor();
-        }
-
         if (isConfigInitCommand()) {
             return runConfigInit();
+        }
+
+        const runtimeConfig = loadRuntimeConfig();
+        setRuntimeOutputFormat(resolveOutputFormat(runtimeConfig));
+        flow.setOutputFormat(runtimeOutputFormat);
+
+        if (isDoctorCommand()) {
+            return await runDoctor(runtimeConfig);
         }
 
         // https://www.npmjs.com/package/tiny-updater OR https://www.npmjs.com/package/update-notifier
@@ -40,15 +48,17 @@ async function runYaba() {
         // check required ENV variables
         flow.checkRequiredEnvVariables();
 
+        const releaseRepo = resolveReleaseRepo(runtimeConfig);
+
         // check if the current directory is git repo
-        checkDirectory();
+        checkDirectory(releaseRepo, runtimeConfig);
 
         // check internet connection
         await flow.checkInternetConnection();
 
         // prepare repoOwner and releaseRepo
-        const repoOwner = await resolveOwner();
-        const releaseRepo = helper.retrieveReleaseRepo(options.repo);
+        const repoOwner = await resolveOwner(runtimeConfig);
+        const releaseContext = resolveReleaseContext(runtimeConfig);
 
         // fetch head branch
         const headBranch = await checkHeadBranch(repoOwner, releaseRepo);
@@ -59,8 +69,8 @@ async function runYaba() {
         // preparing the changeLog from the main/master branch if there is no previous release
         let changeLog = await flow.prepareChangeLog(repoOwner, releaseRepo, headBranch, lastRelease);
 
-        const preparedChangeLog = helper.prepareChangeLog(options.body, changeLog);
-        const releasePreview = buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRelease, headBranch);
+        const preparedChangeLog = helper.prepareChangeLog(releaseContext.body, changeLog);
+        const releasePreview = buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRelease, headBranch, releaseContext);
 
         // preview release without creating it
         if (isReleasePreviewCommand()) {
@@ -110,7 +120,7 @@ async function runYaba() {
         // create the release
         if (canCreateRelease(changeLog)) {
             const lastReleaseTag = resolveLastReleaseTag(lastRelease, headBranch);
-            const releaseResult = await prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag);
+            const releaseResult = await prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseContext);
 
             if (isJsonOutput()) {
                 printJson({
@@ -154,42 +164,53 @@ async function runYaba() {
     }
 }
 
-async function prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag) {
+async function prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseContext) {
 
-    const hasReleaseCreatePermission = await helper.releaseCreatePermit(options.interactive);
+    const hasReleaseCreatePermission = await helper.releaseCreatePermit(releaseContext.interactive);
 
     if (hasReleaseCreatePermission) {
-        const releaseTag = helper.releaseTagName(options.tag);
+        const releaseTag = helper.releaseTagName(releaseContext.tag);
         let changeLogDetails = templateUtils.generateChangelog(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseTag);
-        let releaseName = helper.releaseName(options.releaseName);
-        const releaseUrl = await flow.createRelease(repoOwner, releaseRepo, options.draft, releaseName,
-            changeLogDetails, options.tag);
+        let releaseName = helper.releaseName(releaseContext.releaseName);
+        const releaseUrl = await flow.createRelease(repoOwner, releaseRepo, releaseContext.draft, releaseName,
+            changeLogDetails, releaseContext.tag);
 
         // publishes the changelog on slack
-        await flow.publishToSlack(options.publish, releaseRepo, preparedChangeLog, releaseUrl, releaseName);
+        await flow.publishToSlack(releaseContext.publish, releaseRepo, preparedChangeLog, releaseUrl, releaseName);
 
         return {
             releaseName: releaseName,
             releaseTag: releaseTag,
             previousTag: lastReleaseTag,
             releaseUrl: releaseUrl,
-            draft: options.draft === true,
-            publishRequested: options.publish === true
+            draft: releaseContext.draft === true,
+            publishRequested: releaseContext.publish === true
         };
     } else {
         throw createError('Release was not prepared. Confirmation prompt was declined.', exitCodes.VALIDATION);
     }
 }
 
-async function runDoctor() {
+async function runDoctor(runtimeConfig) {
     const checks = [];
     const tokenConfigured = helper.requiredEnvVariablesExist();
     const gitRepo = helper.isGitRepo();
     const detectedRepo = gitRepo ? helper.retrieveCurrentRepoName() : null;
+    const configSources = runtimeConfig?._meta?.sources || [];
     const slackEndpoints = (process.env.YABA_SLACK_HOOK_URL || '')
         .split(',')
         .map(item => item.trim())
         .filter(Boolean);
+
+    checks.push(createDoctorCheck(
+        'config.sources',
+        true,
+        configSources.length > 0
+            ? `Loaded config from: ${configSources.join(', ')}.`
+            : 'No config file loaded. Using defaults.',
+        false,
+        exitCodes.VALIDATION
+    ));
 
     checks.push(createDoctorCheck(
         'env.githubToken',
@@ -293,7 +314,8 @@ async function runDoctor() {
 }
 
 function runConfigInit() {
-    const configPath = path.join(process.cwd(), 'yaba.config.json');
+    const configPath = resolveConfigFilePath(options.configPath);
+    const configDir = path.dirname(configPath);
     const alreadyExists = fs.existsSync(configPath);
 
     if (alreadyExists && options.force !== true) {
@@ -301,6 +323,9 @@ function runConfigInit() {
     }
 
     const configTemplate = buildDefaultConfigTemplate();
+    if (!fs.existsSync(configDir)) {
+        fs.mkdirSync(configDir, { recursive: true });
+    }
     fs.writeFileSync(configPath, `${JSON.stringify(configTemplate, null, 2)}\n`, 'utf8');
 
     const overwritten = alreadyExists && options.force === true;
@@ -326,10 +351,15 @@ async function checkHeadBranch(repoOwner, releaseRepo) {
     return headBranch;
 }
 
-function checkDirectory() {
+function checkDirectory(releaseRepo, runtimeConfig) {
     // check if the current directory is git repo
-    if (options.repo == undefined && !helper.isGitRepo()) {
+    const hasRepoFromConfig = isNonEmptyString(runtimeConfig?.release?.repo);
+    if (options.repo == undefined && !hasRepoFromConfig && !helper.isGitRepo()) {
         throw createError(`The directory '${helper.retrieveCurrentDirectory()}' is not a Git repo.`, exitCodes.VALIDATION);
+    }
+
+    if (!isNonEmptyString(releaseRepo) || releaseRepo === 'not a git repo') {
+        throw createError('Repository name could not be resolved. Use --repo or set release.repo in config.', exitCodes.VALIDATION);
     }
 }
 
@@ -402,10 +432,10 @@ function resolveLastReleaseTag(lastRelease, headBranch) {
     return lastRelease?.tag_name || headBranch;
 }
 
-function buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRelease, headBranch) {
+function buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRelease, headBranch, releaseContext) {
     const lastReleaseTag = resolveLastReleaseTag(lastRelease, headBranch);
-    const releaseTag = helper.releaseTagName(options.tag);
-    const releaseName = helper.releaseName(options.releaseName);
+    const releaseTag = helper.releaseTagName(releaseContext.tag);
+    const releaseName = helper.releaseName(releaseContext.releaseName);
     const changelogBody = templateUtils.generateChangelog(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseTag);
     const releaseTagSource = lastRelease?.tag_name ? "latest release tag" : "head branch (fallback)";
 
@@ -416,7 +446,7 @@ function buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRele
         releaseTag: releaseTag,
         lastReleaseTag: lastReleaseTag,
         releaseTagSource: releaseTagSource,
-        draft: options.draft === true,
+        draft: releaseContext.draft === true,
         changelogBody: changelogBody
     };
 }
@@ -426,7 +456,26 @@ function printJson(payload) {
 }
 
 function isJsonOutput() {
-    return options.outputFormat === "json";
+    return runtimeOutputFormat === "json";
+}
+
+function setRuntimeOutputFormat(format) {
+    runtimeOutputFormat = resolveOutputFormatCandidate(format);
+}
+
+function resolveOutputFormat(runtimeConfig) {
+    return resolveOutputFormatCandidate(
+        firstDefined(
+            options.outputFormat,
+            process.env.YABA_OUTPUT_FORMAT,
+            runtimeConfig?.output?.format,
+            "human"
+        )
+    );
+}
+
+function resolveOutputFormatCandidate(format) {
+    return `${format || ""}`.trim().toLowerCase() === "json" ? "json" : "human";
 }
 
 function createDoctorCheck(name, ok, message, required, exitCode, skipped = false) {
@@ -525,6 +574,7 @@ function buildDefaultConfigTemplate() {
             tagPattern: "prod_global_{yyyyMMdd}.1",
             namePattern: "Global release {yyyy-MM-dd}",
             draft: false,
+            interactive: true,
             firstReleaseMaxCommits: 50
         },
         notifications: {
@@ -540,9 +590,166 @@ function buildDefaultConfigTemplate() {
     };
 }
 
-async function resolveOwner() {
-    if (options.owner || process.env.YABA_GITHUB_REPO_OWNER) {
+function loadRuntimeConfig() {
+    const config = buildDefaultConfigTemplate();
+    const loadedSources = [];
+    const loadedSet = new Set();
+
+    const userConfigPath = resolveUserConfigPath();
+    mergeConfigFile(config, userConfigPath, false, loadedSources, loadedSet);
+
+    const projectConfigPath = path.join(process.cwd(), 'yaba.config.json');
+    mergeConfigFile(config, projectConfigPath, false, loadedSources, loadedSet);
+
+    if (isNonEmptyString(options.configPath)) {
+        const explicitConfigPath = resolveConfigFilePath(options.configPath);
+        mergeConfigFile(config, explicitConfigPath, true, loadedSources, loadedSet);
+    }
+
+    config._meta = { sources: loadedSources };
+    return config;
+}
+
+function mergeConfigFile(target, filePath, required, loadedSources, loadedSet) {
+    if (!isNonEmptyString(filePath) || loadedSet.has(filePath)) {
+        return;
+    }
+
+    if (!fs.existsSync(filePath)) {
+        if (required) {
+            throw createError(`Config file '${filePath}' was not found.`, exitCodes.VALIDATION);
+        }
+        return;
+    }
+
+    let parsedContent;
+    try {
+        parsedContent = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    } catch (error) {
+        throw createError(`Config file '${filePath}' is not valid JSON.`, exitCodes.VALIDATION);
+    }
+
+    if (!isPlainObject(parsedContent)) {
+        throw createError(`Config file '${filePath}' must contain a JSON object.`, exitCodes.VALIDATION);
+    }
+
+    deepMerge(target, parsedContent);
+    loadedSet.add(filePath);
+    loadedSources.push(filePath);
+}
+
+function resolveReleaseContext(runtimeConfig) {
+    return {
+        releaseName: firstDefined(
+            options.releaseName,
+            renderConfigPattern(runtimeConfig?.release?.namePattern)
+        ),
+        tag: firstDefined(
+            options.tag,
+            renderConfigPattern(runtimeConfig?.release?.tagPattern)
+        ),
+        draft: resolveBoolean(
+            options.draft,
+            runtimeConfig?.release?.draft,
+            false
+        ),
+        publish: resolveBoolean(
+            options.publish,
+            runtimeConfig?.notifications?.slack?.enabled,
+            false
+        ),
+        interactive: resolveBoolean(
+            options.interactive,
+            runtimeConfig?.release?.interactive,
+            true
+        ),
+        body: options.body
+    };
+}
+
+function resolveReleaseRepo(runtimeConfig) {
+    const configuredRepo = runtimeConfig?.release?.repo;
+    return helper.retrieveReleaseRepo(firstDefined(options.repo, configuredRepo));
+}
+
+function resolveConfigFilePath(configPath) {
+    if (!isNonEmptyString(configPath)) {
+        return path.join(process.cwd(), 'yaba.config.json');
+    }
+
+    return path.isAbsolute(configPath)
+        ? configPath
+        : path.resolve(process.cwd(), configPath);
+}
+
+function resolveUserConfigPath() {
+    const homeDir = process.env.HOME || process.env.USERPROFILE;
+    if (!isNonEmptyString(homeDir)) {
+        return null;
+    }
+
+    return path.join(homeDir, '.config', 'yaba', 'config.json');
+}
+
+function renderConfigPattern(pattern) {
+    if (!isNonEmptyString(pattern)) {
+        return undefined;
+    }
+
+    const now = new Date();
+    return pattern
+        .replaceAll('{yyyyMMdd}', formatDate(now, 'yyyyMMdd'))
+        .replaceAll('{yyyy-MM-dd}', formatDate(now, 'yyyy-MM-dd'));
+}
+
+function deepMerge(target, source) {
+    for (const [key, sourceValue] of Object.entries(source)) {
+        if (isPlainObject(sourceValue)) {
+            if (!isPlainObject(target[key])) {
+                target[key] = {};
+            }
+            deepMerge(target[key], sourceValue);
+        } else {
+            target[key] = sourceValue;
+        }
+    }
+}
+
+function isPlainObject(value) {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isNonEmptyString(value) {
+    return typeof value === 'string' && value.trim().length !== 0;
+}
+
+function firstDefined(...values) {
+    for (const value of values) {
+        if (value !== undefined && value !== null) {
+            return value;
+        }
+    }
+    return undefined;
+}
+
+function resolveBoolean(primaryValue, secondaryValue, defaultValue) {
+    if (typeof primaryValue === 'boolean') {
+        return primaryValue;
+    }
+
+    if (typeof secondaryValue === 'boolean') {
+        return secondaryValue;
+    }
+
+    return defaultValue;
+}
+
+async function resolveOwner(runtimeConfig) {
+    if (isNonEmptyString(options.owner) || isNonEmptyString(process.env.YABA_GITHUB_REPO_OWNER)) {
         return helper.retrieveOwner(options.owner, null);
+    }
+    if (isNonEmptyString(runtimeConfig?.github?.owner)) {
+        return runtimeConfig.github.owner.trim();
     }
     const username = await flow.retrieveUsername();
     return helper.retrieveOwner(null, username);

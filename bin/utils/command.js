@@ -4,8 +4,9 @@ const require = createRequire(import.meta.url);
 const packageInfo = require("../../package.json");
 
 import { hideBin } from 'yargs/helpers';
+const rawArguments = hideBin(process.argv);
 
-const commands = yargs(hideBin(process.argv))
+const commands = yargs(rawArguments)
     .scriptName("yaba")
     .usage("Usage: yaba <release|doctor|config> [options]")
     .command("release create", "Create a GitHub release for a repository")
@@ -64,8 +65,11 @@ const commands = yargs(hideBin(process.argv))
     .option("format", {
         describe: "Output format.",
         choices: ["human", "json"],
-        type: "string",
-        default: "human"
+        type: "string"
+    })
+    .option("config", {
+        describe: "Path to config file.",
+        type: "string"
     })
     .option("force", {
         describe: "Overwrite generated files when they already exist.",
@@ -82,17 +86,31 @@ const normalizedOptions = normalizeOptions(commands);
 
 function normalizeOptions(parsed) {
     const normalized = { ...parsed };
-    const noPrompt = parsed["no-prompt"] === true || parsed.noPrompt === true;
+    const noPrompt = wasFlagProvided("--no-prompt") || wasFlagProvided("--yes");
+    const interactiveProvided = wasFlagProvided("--interactive") || wasFlagProvided("-i");
+    const publishProvided = wasFlagProvided("--publish") || wasFlagProvided("-p");
+    const draftProvided = wasFlagProvided("--draft") || wasFlagProvided("-d");
+    const formatProvided = wasFlagProvided("--format");
     const commandName = resolveCommand(parsed);
 
     normalized.releaseName = parsed.name ?? parsed["release-name"];
-    normalized.publish = parsed.publish === true || parsed.notify === "slack";
-    normalized.interactive = parsed.yes === true || noPrompt ? false : parsed.interactive;
+    normalized.publish = parsed.notify === "slack"
+        ? true
+        : publishProvided
+            ? parsed.publish === true
+            : undefined;
+    normalized.interactive = noPrompt
+        ? false
+        : interactiveProvided
+            ? parsed.interactive
+            : undefined;
+    normalized.draft = draftProvided ? parsed.draft === true : undefined;
     normalized.commandName = commandName;
     normalized.releaseCommand = commandName?.startsWith("release.")
         ? commandName.split(".")[1]
         : null;
-    normalized.outputFormat = parsed.format || "human";
+    normalized.outputFormat = formatProvided ? parsed.format : undefined;
+    normalized.configPath = parsed.config;
 
     return normalized;
 }
@@ -122,6 +140,10 @@ function resolveCommand(parsed) {
 
 function isSupportedReleaseCommand(parsed) {
     return resolveCommand(parsed) !== null;
+}
+
+function wasFlagProvided(flag) {
+    return rawArguments.some(argument => argument === flag || argument.startsWith(`${flag}=`));
 }
 
 export { normalizedOptions as options, isSupportedReleaseCommand };

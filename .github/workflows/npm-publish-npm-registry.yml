@@ -20,9 +20,76 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: '16.x'
-          registry-url: 'https://registry.npmjs.org'
-      - run: npm publish --access public --provenance
+          node-version: 24
+          cache: npm
+
+      - name: Verify npm version supports trusted publishing
+        run: |
+          NPM_VERSION="$(npm --version)"
+          echo "npm version: ${NPM_VERSION}"
+          if [ "$(printf '%s\n' "11.5.1" "${NPM_VERSION}" | sort -V | head -n1)" != "11.5.1" ]; then
+            echo "npm ${NPM_VERSION} is too old for trusted publishing (requires >=11.5.1)."
+            exit 1
+          fi
+
+      - name: Resolve tag name
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.tag }}" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Verify tag matches package version
+        run: |
+          PKG_VERSION="$(node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version")"
+          EXPECTED_TAG="v$PKG_VERSION"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry_run }}" = "true" ] && [ -z "${{ inputs.tag }}" ]; then
+            echo "Dry run without tag input. Skipping tag/version check."
+            exit 0
+          fi
+
+          if [ -z "${{ steps.tag.outputs.tag }}" ]; then
+            echo "No tag resolved. Provide a tag input like $EXPECTED_TAG for manual publish."
+            exit 1
+          fi
+
+          if [ "${{ steps.tag.outputs.tag }}" != "$EXPECTED_TAG" ]; then
+            echo "Tag ${{ steps.tag.outputs.tag }} does not match package version $EXPECTED_TAG."
+            exit 1
+          fi
+
+      - name: Check if this version already exists on npm
+        id: npm_check
+        run: |
+          PKG_NAME="$(node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).name")"
+          PKG_VERSION="$(node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version")"
+
+          if npm view "${PKG_NAME}@${PKG_VERSION}" version >/dev/null 2>&1; then
+            echo "already_published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Ensure tokenless trusted publish path
+        if: steps.npm_check.outputs.already_published != 'true' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
+        run: |
+          if [ -n "${NODE_AUTH_TOKEN:-}" ] || [ -n "${NPM_TOKEN:-}" ]; then
+            echo "Detected publish token env vars. Trusted publishing should run without npm write tokens."
+            exit 1
+          fi
+
+      - name: Publish to npm
+        if: steps.npm_check.outputs.already_published != 'true' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
+        run: npm publish --access public --provenance

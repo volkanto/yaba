@@ -27,9 +27,8 @@ async function runYaba() {
         // check internet connection
         await flow.checkInternetConnection();
 
-        // prepare username, repoOwner and releaseRepo
-        const username = await flow.retrieveUsername();
-        const repoOwner = helper.retrieveOwner(options.owner, username);
+        // prepare repoOwner and releaseRepo
+        const repoOwner = await resolveOwner();
         const releaseRepo = helper.retrieveReleaseRepo(options.repo);
 
         // fetch head branch
@@ -114,5 +113,13 @@ function canCreateRelease(changeLog) {
 
 function canShowChangelog(changeLog) {
     return changeLog.length != 0 && options.changelog;
+}
+
+async function resolveOwner() {
+    if (options.owner || process.env.YABA_GITHUB_REPO_OWNER) {
+        return helper.retrieveOwner(options.owner, null);
+    }
+    const username = await flow.retrieveUsername();
+    return helper.retrieveOwner(null, username);
 }
 

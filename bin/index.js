@@ -5,7 +5,7 @@ import boxen from "boxen";
 import * as helper from "./utils/helper.js";
 import { checkUpdate } from "./utils/tool.js";
 import * as flow from "./utils/flow.js";
-import { options, isReleaseCreateCommand } from "./utils/command.js";
+import { options, isSupportedReleaseCommand } from "./utils/command.js";
 import * as templateUtils from "./utils/template-utils.js";
 
 runYaba();
@@ -13,8 +13,8 @@ runYaba();
 async function runYaba() {
 
     try {
-        if (!isReleaseCreateCommand(options)) {
-            console.log(kleur.red("Unsupported command. Use 'yaba release create --help' for usage details."));
+        if (!isSupportedReleaseCommand(options)) {
+            console.log(kleur.red("Unsupported command. Use 'yaba release create --help' or 'yaba release preview --help' for usage details."));
             process.exit(1);
         }
 
@@ -43,6 +43,12 @@ async function runYaba() {
 
         // preparing the changeLog from the main/master branch if there is no previous release
         let changeLog = await flow.prepareChangeLog(repoOwner, releaseRepo, headBranch, lastRelease);
+
+        // preview release without creating it
+        if (isReleasePreviewCommand()) {
+            printReleasePreview(changeLog, repoOwner, releaseRepo, lastRelease, headBranch);
+            process.exit(0);
+        }
 
         // show only changelog
         if (canShowChangelog(changeLog)) {
@@ -111,12 +117,59 @@ function printChangelog(repoName, changeLog) {
     console.log('\n\n' + boxen(changelogMsg, changelogBoxOptions)); 
 }
 
+function printReleasePreview(changeLog, repoOwner, releaseRepo, lastRelease, headBranch) {
+    const preparedChangeLog = helper.prepareChangeLog(options.body, changeLog);
+    const lastReleaseTag = resolveLastReleaseTag(lastRelease, headBranch);
+    const releaseTag = helper.releaseTagName(options.tag);
+    const releaseName = helper.releaseName(options.releaseName);
+    const changelogBody = templateUtils.generateChangelog(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseTag);
+    const releaseTagSource = lastRelease?.tag_name ? "latest release tag" : "head branch (fallback)";
+
+    const summaryBoxOptions = {
+        padding: 1,
+        title: 'Release Preview Summary',
+        titleAlignment: 'left',
+        align: 'left',
+        borderColor: 'cyan',
+        borderStyle: 'round'
+    };
+
+    const bodyBoxOptions = {
+        padding: 1,
+        title: 'Release Preview Body',
+        titleAlignment: 'left',
+        align: 'left',
+        borderColor: 'green',
+        borderStyle: 'round'
+    };
+
+    const summary = [
+        `Owner: ${repoOwner}`,
+        `Repository: ${releaseRepo}`,
+        `Release name: ${releaseName}`,
+        `New tag: ${releaseTag}`,
+        `Previous tag: ${lastReleaseTag} (${releaseTagSource})`,
+        `Draft: ${options.draft === true ? "true" : "false"}`
+    ].join('\n');
+
+    console.log('\n' + boxen(summary, summaryBoxOptions));
+    console.log('\n' + boxen(`\n${changelogBody}`, bodyBoxOptions));
+}
+
 function canCreateRelease(changeLog) {
     return changeLog.length != 0 && !options.changelog;
 }
 
 function canShowChangelog(changeLog) {
     return changeLog.length != 0 && options.changelog;
+}
+
+function isReleasePreviewCommand() {
+    return options.releaseCommand === "preview";
+}
+
+function resolveLastReleaseTag(lastRelease, headBranch) {
+    return lastRelease?.tag_name || headBranch;
 }
 
 async function resolveOwner() {

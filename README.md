@@ -156,6 +156,20 @@ If a repository has no previous release, `yaba` now falls back to the head branc
 > **:bulb:** If you want to bypass the prompt before creating the actual release,
 > you can use `--yes` or `--no-prompt`. This is useful in automation tools.
 
+### Exit Codes
+
+`yaba` now returns deterministic exit codes for automation/CI usage:
+
+```text
+0 = success
+1 = validation/config/user-input error
+2 = authentication/authorization error
+3 = network/connectivity error
+4 = upstream API error
+5 = partial success (release created, notification failed)
+6 = unexpected internal error
+```
+
 ## Run Locally
 
 You have to clone the repository to your local machine

@@ -6,6 +6,8 @@ import ora from "ora";
 import * as helper from './helper.js';
 import kleur from "kleur";
 import axios from "axios";
+import { createError, mapGithubError, mapNetworkError } from './errors.js';
+import { exitCodes } from './exit-codes.js';
 const octokit = new Octokit({
     auth: process.env.YABA_GITHUB_ACCESS_TOKEN
 });
@@ -19,7 +21,7 @@ export function checkRequiredEnvVariables() {
     spinner.start('Checking required ENV variables...');
     if (helper.requiredEnvVariablesExist() == false) {
         spinner.fail('The required env variables are not set in order to run the command.');
-        process.exit(1);
+        throw createError('The required env variables are not set in order to run the command.', exitCodes.VALIDATION);
     }
     spinner.succeed('Required ENV variables in place.');
 }
@@ -32,12 +34,20 @@ export function checkRequiredEnvVariables() {
 export async function checkInternetConnection() {
 
     spinner.start('Checking internet connection...');
-    const isInternetUp = await isOnline();
-    if (!isInternetUp) {
-        spinner.fail('There is no internet connection!');
-        process.exit(1);
+    try {
+        const isInternetUp = await isOnline();
+        if (!isInternetUp) {
+            spinner.fail('There is no internet connection!');
+            throw createError('There is no internet connection.', exitCodes.NETWORK);
+        }
+        spinner.succeed('Internet connection established.');
+    } catch (error) {
+        if (error?.exitCode) {
+            throw error;
+        }
+        spinner.fail('Unable to verify internet connection.');
+        throw mapNetworkError(error, 'Unable to verify internet connection.');
     }
-    spinner.succeed('Internet connection established.');
 }
 
 /**
@@ -57,8 +67,13 @@ export async function fetchLastRelease(owner, repo) {
         spinner.succeed(`Last release: ${kleur.blue().bold().underline(release.tag_name)}`);
         return release;
     } catch (error) {
-        spinner.warn(`Last release not found.`);
-        return null;
+        const status = error?.status || error?.response?.status;
+        if (status === 404) {
+            spinner.warn(`Last release not found.`);
+            return null;
+        }
+        spinner.fail('Could not fetch the latest release.');
+        throw mapGithubError(error, 'Could not fetch the latest release.');
     }
 }
 
@@ -71,13 +86,18 @@ export async function fetchLastRelease(owner, repo) {
  */
 export async function fetchHeadBranch(owner, repo) {
     spinner.start('Fetching head branch...');
-    const { data: repository } = await octokit.request('GET /repos/{owner}/{repo}', {
-        owner: owner,
-        repo: repo
-    });
+    try {
+        const { data: repository } = await octokit.request('GET /repos/{owner}/{repo}', {
+            owner: owner,
+            repo: repo
+        });
 
-    spinner.succeed(`Head branch: ${kleur.blue().bold().underline(repository.default_branch)}`);
-    return repository.default_branch;
+        spinner.succeed(`Head branch: ${kleur.blue().bold().underline(repository.default_branch)}`);
+        return repository.default_branch;
+    } catch (error) {
+        spinner.fail('Could not fetch repository default branch.');
+        throw mapGithubError(error, 'Could not fetch repository default branch.');
+    }
 }
 
 /**
@@ -130,9 +150,9 @@ export async function prepareChangelog(owner, repo, base, head) {
         });
 
     } catch (error) {
-        const errorResponseData = error.response.data;
-        spinner.fail(`Something went wrong while preparing the changelog! ${errorResponseData.message} -> ${errorResponseData.documentation_url}`);
-        process.exit(1);
+        const errorMessage = error?.response?.data?.message;
+        spinner.fail(`Something went wrong while preparing the changelog! ${errorMessage || ''}`.trim());
+        throw mapGithubError(error, 'Could not prepare changelog.');
     }
 }
 
@@ -145,16 +165,21 @@ export async function prepareChangelog(owner, repo, base, head) {
  */
 export async function listCommits(owner, repo, head) {
     spinner.start(`Fetching commits from ${head} branch...`);
-    const { data: commits } = await octokit.request('GET /repos/{owner}/{repo}/commits', {
-        owner: owner,
-        repo: repo
-    });
-    spinner.succeed('Commits have been fetched...');
+    try {
+        const { data: commits } = await octokit.request('GET /repos/{owner}/{repo}/commits', {
+            owner: owner,
+            repo: repo
+        });
+        spinner.succeed('Commits have been fetched...');
 
-    // return commits;
-    return commits.map(item => {
-        return item.commit.message;
-    });
+        // return commits;
+        return commits.map(item => {
+            return item.commit.message;
+        });
+    } catch (error) {
+        spinner.fail(`Could not fetch commits from ${head} branch.`);
+        throw mapGithubError(error, `Could not fetch commits from ${head} branch.`);
+    }
 }
 
 /**
@@ -190,13 +215,13 @@ export async function createRelease(owner, repo, draft, name, body, tag_name) {
 
     } catch (error) {
         let errorMessage = "\n";
-        let errors = error.response.data.errors;
-        let message = error.response.data.message;
+        const errors = error?.response?.data?.errors || [];
+        const message = error?.response?.data?.message || 'Could not create release';
         errors.forEach(element => {
             errorMessage += `\t* field: '${element.field}' - code: '${element.code}'`;
         });
         spinner.fail(`${message} while preparing the release! ${errorMessage}`);
-        process.exit(1);
+        throw mapGithubError(error, `${message} while preparing the release.`);
     }
 }
 
@@ -205,8 +230,12 @@ export async function createRelease(owner, repo, draft, name, body, tag_name) {
  * @returns {Promise<*>}
  */
 export async function retrieveUsername() {
-    const { data: user } = await octokit.request('GET /user');
-    return user.login;
+    try {
+        const { data: user } = await octokit.request('GET /user');
+        return user.login;
+    } catch (error) {
+        throw mapGithubError(error, 'Could not retrieve authenticated user.');
+    }
 }
 
 /**
@@ -225,14 +254,25 @@ export async function publishToSlack(publish, repo, changelog, releaseUrl, relea
 
         const slackHookUrls = process.env.YABA_SLACK_HOOK_URL;
         if (!slackHookUrls) {
-            spinner.fail("Release not announced on Slack: configuration not found!");
-            return;
+            spinner.fail('Slack publish requested but YABA_SLACK_HOOK_URL is not configured.');
+            throw createError('Slack publish requested but YABA_SLACK_HOOK_URL is not configured.', exitCodes.VALIDATION);
         }
 
-        const slackHookUrlList = slackHookUrls.split(",");
+        const slackHookUrlList = slackHookUrls.split(",").map(item => item.trim()).filter(Boolean);
+        if (slackHookUrlList.length === 0) {
+            spinner.fail('Slack publish requested but no valid webhook URL exists.');
+            throw createError('Slack publish requested but no valid webhook URL exists.', exitCodes.VALIDATION);
+        }
+
         const message = helper.prepareSlackMessage(repo, changelog, releaseUrl, releaseName);
-        for (const channelUrl of slackHookUrlList) {
-            await postToSlack(channelUrl, message);
+        try {
+            for (const channelUrl of slackHookUrlList) {
+                await postToSlack(channelUrl, message);
+            }
+            spinner.succeed('Changelog published to Slack.');
+        } catch (error) {
+            spinner.fail('Release was created but Slack announcement failed.');
+            throw createError('Release was created but Slack announcement failed.', exitCodes.PARTIAL_SUCCESS, error);
         }
     }
 }
@@ -246,15 +286,7 @@ export async function publishToSlack(publish, repo, changelog, releaseUrl, relea
  * @param message the message to send to the given Slack {@code channelUrl}
  */
 async function postToSlack(channelUrl, message) {
-    await axios
-        .post(channelUrl, message)
-        .then(function (response) {
-            spinner.succeed('Changelog published to Slack.');
-        })
-        .catch(error => {
-            spinner.fail(`Something went wrong while sending to Slack channel: ${error}`);
-            process.exit(0);
-        });
+    await axios.post(channelUrl, message);
 }
 
 /**

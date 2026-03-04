@@ -114,6 +114,8 @@ Options:
                               [choices: "slack"]
   -p, --publish               Publishes the release announcement to the defined Slack
                               channel                                   [boolean]
+      --format                Output format.
+                              [choices: "human", "json"] [default: "human"]
   -h, --help                  Show help                                 [boolean]
   -v, --version               Show version number                       [boolean]
 ```
@@ -134,6 +136,14 @@ Preview release details without side effects:
 ```shell
 yaba release preview --repo my-repo
 ```
+
+Preview release details in JSON format:
+
+```shell
+yaba release preview --repo my-repo --format json
+```
+
+When `--format json` is used, `yaba` prints machine-readable command results to `stdout` and errors to `stderr`.
 
 You can run `yaba` from a git directory or any other directories which is not a git repo.
 

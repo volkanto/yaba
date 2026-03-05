@@ -13,8 +13,7 @@ on:
           default: ''
   
 env:
-  YABA_GITHUB_ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-  YABA_SLACK_HOOK_URL: ${{ secrets.YABA_SLACK_HOOK_URL }}
+  YABA_GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   YABA_GITHUB_REPO_OWNER: ${{ github.repository_owner }}
 
 jobs:

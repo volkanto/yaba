@@ -11,10 +11,8 @@ on:
           required: true
           description: Tag name
           default: ''
-  
-env:
-  YABA_GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  YABA_GITHUB_REPO_OWNER: ${{ github.repository_owner }}
+permissions:
+  contents: write
 
 jobs:
   release:
@@ -29,4 +27,7 @@ jobs:
       - name: Install Yaba
         run: npm install -g yaba-release-cli
       - name: Prepare release notes
-        run: yaba -i false -r ${{ github.event.repository.name }} -n '${{ github.event.inputs.release-descriptor }}' -t ${{ github.event.inputs.tag-name }}
+        env:
+          YABA_GITHUB_ACCESS_TOKEN: ${{ github.token }}
+          YABA_GITHUB_REPO_OWNER: ${{ github.repository_owner }}
+        run: yaba release create -i false -r ${{ github.event.repository.name }} -n "${{ github.event.inputs.release-descriptor }}" -t "${{ github.event.inputs.tag-name }}"

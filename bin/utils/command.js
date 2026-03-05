@@ -121,8 +121,17 @@ function resolveCommand(parsed) {
         return "release.create";
     }
 
-    if (positional.length === 1 && positional[0] === "doctor") {
-        return "doctor";
+    if (positional.length === 1) {
+        if (positional[0] === "doctor") {
+            return "doctor";
+        }
+
+        if (positional[0] === "release") {
+            const releaseAction = resolveReleaseAction(parsed);
+            if (releaseAction) {
+                return `release.${releaseAction}`;
+            }
+        }
     }
 
     if (positional.length === 2 && positional[0] === "config" && positional[1] === "init") {
@@ -132,6 +141,22 @@ function resolveCommand(parsed) {
     if (positional.length === 2 && positional[0] === "release") {
         if (positional[1] === "create" || positional[1] === "preview") {
             return `release.${positional[1]}`;
+        }
+    }
+
+    return null;
+}
+
+function resolveReleaseAction(parsed) {
+    const candidates = [parsed.preview, parsed.create, parsed.action];
+    for (const candidate of candidates) {
+        if (typeof candidate !== "string") {
+            continue;
+        }
+
+        const normalized = candidate.trim().toLowerCase();
+        if (normalized === "create" || normalized === "preview") {
+            return normalized;
         }
     }
 

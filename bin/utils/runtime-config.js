@@ -31,6 +31,10 @@ function resolveBoolean(primaryValue, secondaryValue, defaultValue) {
 
 function deepMerge(target, source) {
     for (const [key, sourceValue] of Object.entries(source)) {
+        if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+            continue;
+        }
+
         if (isPlainObject(sourceValue)) {
             if (!isPlainObject(target[key])) {
                 target[key] = {};

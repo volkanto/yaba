@@ -54,6 +54,29 @@ test('deepMerge merges nested object keys without losing siblings', () => {
     });
 });
 
+test('deepMerge ignores prototype-polluting keys', () => {
+    const target = {};
+    const source = JSON.parse('{"__proto__":{"polluted":"yes"},"constructor":{"prototype":{"pollutedCtor":"yes"}},"prototype":{"pollutedProto":"yes"},"safe":{"enabled":true}}');
+
+    try {
+        deepMerge(target, source);
+
+        assert.deepEqual(target, {
+            safe: {
+                enabled: true
+            }
+        });
+
+        assert.equal(Object.prototype.polluted, undefined);
+        assert.equal(Object.prototype.pollutedCtor, undefined);
+        assert.equal(Object.prototype.pollutedProto, undefined);
+    } finally {
+        delete Object.prototype.polluted;
+        delete Object.prototype.pollutedCtor;
+        delete Object.prototype.pollutedProto;
+    }
+});
+
 test('renderConfigPattern replaces date placeholders', () => {
     const now = new Date('2026-03-06T08:00:00.000Z');
     const rendered = renderConfigPattern('tag-{yyyyMMdd}-name-{yyyy-MM-dd}', now);

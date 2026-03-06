@@ -1,0 +1,52 @@
+name: Publish package to GitHub Packages
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Optional tag to publish (example: v1.2.3)"
+        required: false
+        type: string
+        default: ""
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Optional tag to publish (example: v1.2.3)"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish-gpr:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: gpr-publish-${{ inputs.tag || github.ref_name }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout repository at current ref
+        if: inputs.tag == ''
+        uses: actions/checkout@v4
+
+      - name: Checkout repository at tag
+        if: inputs.tag != ''
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://npm.pkg.github.com/
+          scope: ${{ github.repository_owner }}
+      - run: npm ci
+      - name: scope package name as required by GHPR
+        run: npm init -y --scope ${{ github.repository_owner }}
+      - run: npm publish --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+      - name: "Print errors"
+        if: ${{ failure() }}
+        run: cat /home/runner/.npm/_logs/*

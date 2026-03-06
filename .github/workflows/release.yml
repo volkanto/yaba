@@ -26,8 +26,29 @@ jobs:
           node-version: 24
       - name: Install Yaba
         run: npm install -g yaba-release-cli
-      - name: Prepare release notes
+      - name: Create GitHub release
         env:
           YABA_GITHUB_ACCESS_TOKEN: ${{ github.token }}
           YABA_GITHUB_REPO_OWNER: ${{ github.repository_owner }}
         run: yaba release create -i false -r ${{ github.event.repository.name }} -n "${{ github.event.inputs.release-descriptor }}" -t "${{ github.event.inputs.tag-name }}"
+
+  publish-npm:
+    name: Publish to npm Registry
+    needs: release
+    uses: ./.github/workflows/publish-npm-registry.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      dry_run: false
+      tag: ${{ github.event.inputs.tag-name }}
+
+  publish-github-packages:
+    name: Publish to GitHub Packages
+    needs: release
+    uses: ./.github/workflows/publish-github-packages.yml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      tag: ${{ github.event.inputs.tag-name }}

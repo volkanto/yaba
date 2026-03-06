@@ -1,8 +1,18 @@
 name: Publish Package to npmjs
 
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      dry_run:
+        description: "Run validation only (do not publish to npm)"
+        required: false
+        type: boolean
+        default: false
+      tag:
+        description: "Optional tag to validate (example: v1.2.3)"
+        required: false
+        type: string
+        default: ""
   workflow_dispatch:
     inputs:
       dry_run:
@@ -24,12 +34,19 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     concurrency:
-      group: npm-publish-${{ github.event.release.tag_name || github.ref_name }}
+      group: npm-publish-${{ inputs.tag || github.ref_name }}
       cancel-in-progress: false
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repository at current ref
+        if: inputs.tag == ''
         uses: actions/checkout@v4
+
+      - name: Checkout repository at tag
+        if: inputs.tag != ''
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ inputs.tag }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -52,11 +69,8 @@ jobs:
       - name: Resolve tag name
         id: tag
         run: |
-          if [ "${{ github.event_name }}" = "release" ]; then
-            TAG="${{ github.event.release.tag_name }}"
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.tag }}" ]; then
-            TAG="${{ inputs.tag }}"
-          else
+          TAG="${{ inputs.tag }}"
+          if [ -z "$TAG" ]; then
             TAG="${{ github.ref_name }}"
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
@@ -66,7 +80,7 @@ jobs:
           PKG_VERSION="$(node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version")"
           EXPECTED_TAG="v$PKG_VERSION"
 
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry_run }}" = "true" ] && [ -z "${{ inputs.tag }}" ]; then
+          if [ "${{ inputs.dry_run }}" = "true" ] && [ -z "${{ inputs.tag }}" ]; then
             echo "Dry run without tag input. Skipping tag/version check."
             exit 0
           fi
@@ -94,7 +108,7 @@ jobs:
           fi
 
       - name: Ensure tokenless trusted publish path
-        if: steps.npm_check.outputs.already_published != 'true' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
+        if: steps.npm_check.outputs.already_published != 'true' && !inputs.dry_run
         run: |
           if [ -n "${NODE_AUTH_TOKEN:-}" ] || [ -n "${NPM_TOKEN:-}" ]; then
             echo "Detected publish token env vars. Trusted publishing should run without npm write tokens."
@@ -102,11 +116,11 @@ jobs:
           fi
 
       - name: Publish to npm
-        if: steps.npm_check.outputs.already_published != 'true' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
+        if: steps.npm_check.outputs.already_published != 'true' && !inputs.dry_run
         run: npm publish --access public --provenance
 
       - name: Validate npm publish (dry run)
-        if: github.event_name == 'workflow_dispatch' && inputs.dry_run
+        if: inputs.dry_run
         run: npm publish --access public --dry-run
 
       - name: Skip publish (already published)

@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Yaba | GitHub Release CLI</title>
+    <meta
+      name="description"
+      content="Yaba is a CLI for reliable GitHub release workflows: preview changelogs, create releases, run diagnostics, and automate release operations in CI."
+    >
+    <meta property="og:title" content="Yaba | GitHub Release CLI">
+    <meta
+      property="og:description"
+      content="Release preview, release creation, diagnostics, and config-driven automation for GitHub repositories."
+    >
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Sora:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    >
+    <link rel="stylesheet" href="./styles.css">
+    <script defer src="./app.js"></script>
+  </head>
+  <body>
+    <div class="bg-orb bg-orb-a" aria-hidden="true"></div>
+    <div class="bg-orb bg-orb-b" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="brand" href="#top">
+        <span class="brand-mark">Y</span>
+        <span>Yaba</span>
+      </a>
+      <button class="menu-toggle" type="button" aria-label="Toggle menu" aria-expanded="false">Menu</button>
+      <nav class="site-nav" id="site-nav">
+        <a href="#commands">Commands</a>
+        <a href="#capabilities">Capabilities</a>
+        <a href="#quickstart">Quickstart</a>
+        <a href="#automation">Automation</a>
+        <a href="#install">Install</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero section reveal">
+        <p class="eyebrow">GitHub Release Operations</p>
+        <h1>Ship consistent GitHub releases with one CLI.</h1>
+        <p class="hero-copy">
+          Yaba helps teams prepare changelogs, preview release payloads, create GitHub releases, and wire Slack notifications
+          into repeatable release workflows.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="https://www.npmjs.com/package/yaba-release-cli" target="_blank" rel="noopener noreferrer">Install from npm</a>
+          <a class="btn btn-ghost" href="https://github.com/volkanto/yaba" target="_blank" rel="noopener noreferrer">View on GitHub</a>
+        </div>
+        <div class="terminal-card">
+          <p><span class="prompt">$</span> npm i -g yaba-release-cli</p>
+          <p><span class="prompt">$</span> yaba doctor</p>
+          <p><span class="prompt">$</span> yaba release preview --repo my-repo --format json</p>
+          <p><span class="prompt">$</span> yaba release create --repo my-repo --publish --no-prompt</p>
+        </div>
+      </section>
+
+      <section class="section reveal" id="commands">
+        <div class="section-heading">
+          <p class="eyebrow">Core Commands</p>
+          <h2>Everything starts from four explicit commands</h2>
+        </div>
+        <div class="card-grid">
+          <article class="card">
+            <h3><code>release preview</code></h3>
+            <p>Generates release name, tag, and changelog without mutating GitHub state.</p>
+            <p class="meta">Best for pull-request checks and CI policy gates.</p>
+          </article>
+          <article class="card">
+            <h3><code>release create</code></h3>
+            <p>Creates a GitHub release using generated or explicit changelog content.</p>
+            <p class="meta">Supports <code>--draft</code>, <code>--publish</code>, and <code>--no-prompt</code>.</p>
+          </article>
+          <article class="card">
+            <h3><code>doctor</code></h3>
+            <p>Verifies token/config/network prerequisites before release operations.</p>
+            <p class="meta">Use <code>--format json</code> for machine-readable diagnostics.</p>
+          </article>
+          <article class="card">
+            <h3><code>config init</code></h3>
+            <p>Creates a project config template (<code>yaba.config.json</code>) for shared defaults.</p>
+            <p class="meta">Use <code>--force</code> to overwrite existing config.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section reveal" id="capabilities">
+        <div class="section-heading">
+          <p class="eyebrow">Capabilities</p>
+          <h2>Designed for maintainers and CI pipelines</h2>
+        </div>
+        <div class="capability-grid">
+          <div>
+            <h3>Changelog generation</h3>
+            <p>Diffs commits from latest release tag, with head-branch fallback if no release exists yet.</p>
+          </div>
+          <div>
+            <h3>Deterministic exit codes</h3>
+            <p>Structured outcomes for success, validation failures, auth errors, network errors, and upstream failures.</p>
+          </div>
+          <div>
+            <h3>Config precedence</h3>
+            <p><code>flags &gt; env vars &gt; project config &gt; user config &gt; defaults</code>.</p>
+          </div>
+          <div>
+            <h3>Slack publishing</h3>
+            <p>Publish release announcements with <code>--publish</code> when <code>YABA_SLACK_HOOK_URL</code> is configured.</p>
+          </div>
+          <div>
+            <h3>JSON output mode</h3>
+            <p>Use <code>--format json</code> to integrate with bots, CI checks, or custom release tooling.</p>
+          </div>
+          <div>
+            <h3>Repo auto-detection</h3>
+            <p>Reads <code>remote.origin.url</code> when possible, with explicit <code>--repo</code>/<code>--owner</code> overrides.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section reveal" id="quickstart">
+        <div class="section-heading">
+          <p class="eyebrow">Quickstart</p>
+          <h2>Get from install to release preview in minutes</h2>
+        </div>
+        <ol class="steps">
+          <li>
+            <h3>Install</h3>
+            <p><code>npm i -g yaba-release-cli</code></p>
+          </li>
+          <li>
+            <h3>Set credentials</h3>
+            <p><code>export YABA_GITHUB_ACCESS_TOKEN=your_token</code></p>
+          </li>
+          <li>
+            <h3>Validate environment</h3>
+            <p><code>yaba doctor</code></p>
+          </li>
+          <li>
+            <h3>Preview release</h3>
+            <p><code>yaba release preview --repo your-repo</code></p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="section reveal" id="automation">
+        <div class="section-heading">
+          <p class="eyebrow">Automation Ready</p>
+          <h2>Built for release pipelines, not just manual runs</h2>
+        </div>
+        <div class="automation-grid">
+          <div class="code-panel">
+            <h3>Example CI-safe invocation</h3>
+            <pre><code>yaba release preview \
+  --repo my-repo \
+  --owner my-org \
+  --format json</code></pre>
+          </div>
+          <div class="code-panel">
+            <h3>Environment variables</h3>
+            <pre><code>YABA_GITHUB_ACCESS_TOKEN   # required
+YABA_GITHUB_REPO_OWNER    # optional
+YABA_SLACK_HOOK_URL       # optional</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="section reveal install" id="install">
+        <p class="eyebrow">Start Releasing</p>
+        <h2>Use Yaba when release quality and consistency matter.</h2>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="https://www.npmjs.com/package/yaba-release-cli" target="_blank" rel="noopener noreferrer">Install Yaba</a>
+          <a class="btn btn-ghost" href="https://github.com/volkanto/yaba/issues" target="_blank" rel="noopener noreferrer">Request Feature</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>© <span id="year"></span> Yaba • GitHub Release CLI</p>
+    </footer>
+  </body>
+</html>

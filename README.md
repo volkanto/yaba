@@ -106,12 +106,12 @@ Options:
                                                                        [boolean]
   -i, --interactive           Prompt before (draft) release is created (default true)
                                                                        [boolean]
-      --yes                   Skip confirmation prompt and create release
-                              directly.                                 [boolean]
+      --yes                   DEPRECATED: Skip confirmation prompt and create
+                              release directly. Use --no-prompt.        [boolean]
       --no-prompt             Skip release confirmation prompt (same as --yes).
                                                                        [boolean]
-      --notify                Send notifications after release is created.
-                              [choices: "slack"]
+      --notify                DEPRECATED: Send notifications after release is
+                              created. Use --publish. [choices: "slack"]
   -p, --publish               Publishes the release announcement to the defined Slack
                               channel                                   [boolean]
       --format                Output format.
@@ -133,7 +133,7 @@ Supported commands:
 Create release with the new command format:
 
 ```shell
-yaba release create --repo my-repo --notify slack --no-prompt
+yaba release create --repo my-repo --publish --no-prompt
 ```
 
 Preview release details without side effects:
@@ -204,8 +204,16 @@ below pattern:
 
 If a repository has no previous release, `yaba` now falls back to the head branch for changelog comparison and still prepares the release.
 
-> **:bulb:** If you want to bypass the prompt before creating the actual release,
-> you can use `--yes` or `--no-prompt`. This is useful in automation tools.
+### Deprecations (v2 compatibility)
+
+The following legacy invocations are still supported in v2, but emit deprecation warnings in human-readable output and are planned for removal in v3:
+
+- `--yes` -> use `--no-prompt`
+- `--notify slack` -> use `--publish`
+- `--release-name` -> use `--name`
+- implicit `yaba` command -> use `yaba release create`
+
+For automation scripts, migrate now to avoid v3 breakage.
 
 ### Exit Codes
 

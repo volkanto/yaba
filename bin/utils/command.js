@@ -43,7 +43,7 @@ const commands = yargs(rawArguments)
         type: "boolean"
     })
     .option("yes", {
-        describe: "Skip confirmation prompt and create release directly.",
+        describe: "DEPRECATED: Skip confirmation prompt and create release directly. Use --no-prompt.",
         type: "boolean",
         default: false
     })
@@ -53,7 +53,7 @@ const commands = yargs(rawArguments)
         default: false
     })
     .option("notify", {
-        describe: "Send notifications after release is created.",
+        describe: "DEPRECATED: Send notifications after release is created. Use --publish.",
         choices: ["slack"],
         type: "string"
     })
@@ -86,7 +86,9 @@ const normalizedOptions = normalizeOptions(commands);
 
 function normalizeOptions(parsed) {
     const normalized = { ...parsed };
-    const noPrompt = wasFlagProvided("--no-prompt") || wasFlagProvided("--yes");
+    const noPromptProvided = wasFlagProvided("--no-prompt");
+    const yesProvided = wasFlagProvided("--yes");
+    const noPrompt = noPromptProvided || yesProvided;
     const interactiveProvided = wasFlagProvided("--interactive") || wasFlagProvided("-i");
     const publishProvided = wasFlagProvided("--publish") || wasFlagProvided("-p");
     const draftProvided = wasFlagProvided("--draft") || wasFlagProvided("-d");
@@ -111,8 +113,32 @@ function normalizeOptions(parsed) {
         : null;
     normalized.outputFormat = formatProvided ? parsed.format : undefined;
     normalized.configPath = parsed.config;
+    normalized.deprecationWarnings = collectDeprecationWarnings(parsed, commandName, yesProvided);
 
     return normalized;
+}
+
+function collectDeprecationWarnings(parsed, commandName, yesProvided) {
+    const warnings = [];
+    const positional = parsed._ || [];
+
+    if (yesProvided) {
+        warnings.push("Flag '--yes' is deprecated and will be removed in v3. Use '--no-prompt' instead.");
+    }
+
+    if (wasFlagProvided("--notify")) {
+        warnings.push("Flag '--notify slack' is deprecated and will be removed in v3. Use '--publish' instead.");
+    }
+
+    if (wasFlagProvided("--release-name")) {
+        warnings.push("Flag '--release-name' is deprecated and will be removed in v3. Use '--name' instead.");
+    }
+
+    if (commandName === "release.create" && positional.length === 0) {
+        warnings.push("Implicit command invocation ('yaba' => 'yaba release create') is deprecated and will be removed in v3.");
+    }
+
+    return warnings;
 }
 
 function resolveCommand(parsed) {

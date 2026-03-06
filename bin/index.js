@@ -34,6 +34,9 @@ async function runYaba() {
         const runtimeConfig = loadRuntimeConfig();
         setRuntimeOutputFormat(resolveOutputFormat(runtimeConfig));
         flow.setOutputFormat(runtimeOutputFormat);
+        if (!isJsonOutput()) {
+            printDeprecationWarnings(options.deprecationWarnings);
+        }
 
         if (isDoctorCommand()) {
             return await runDoctor(runtimeConfig);
@@ -453,6 +456,15 @@ function buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRele
 
 function printJson(payload) {
     console.log(JSON.stringify(payload, null, 2));
+}
+
+function printDeprecationWarnings(warnings) {
+    if (!Array.isArray(warnings) || warnings.length === 0) {
+        return;
+    }
+
+    const body = warnings.map(item => `${kleur.yellow('DEPRECATION')} ${item}`).join('\n');
+    console.warn(`\n${body}\n`);
 }
 
 function isJsonOutput() {

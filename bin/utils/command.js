@@ -158,6 +158,13 @@ function resolveCommand(parsed) {
                 return `release.${releaseAction}`;
             }
         }
+
+        if (positional[0] === "config") {
+            const configAction = resolveConfigAction(parsed);
+            if (configAction) {
+                return `config.${configAction}`;
+            }
+        }
     }
 
     if (positional.length === 2 && positional[0] === "config" && positional[1] === "init") {
@@ -182,6 +189,22 @@ function resolveReleaseAction(parsed) {
 
         const normalized = candidate.trim().toLowerCase();
         if (normalized === "create" || normalized === "preview") {
+            return normalized;
+        }
+    }
+
+    return null;
+}
+
+function resolveConfigAction(parsed) {
+    const candidates = [parsed.init, parsed.action];
+    for (const candidate of candidates) {
+        if (typeof candidate !== "string") {
+            continue;
+        }
+
+        const normalized = candidate.trim().toLowerCase();
+        if (normalized === "init") {
             return normalized;
         }
     }

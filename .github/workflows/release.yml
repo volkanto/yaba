@@ -15,7 +15,24 @@ permissions:
   contents: write
 
 jobs:
+  validate:
+    name: Validate package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run test suite
+        run: npm test
+
   release:
+    needs: validate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the code

@@ -4,7 +4,6 @@ import kleur from "kleur";
 import boxen from "boxen";
 import fs from "fs";
 import path from "path";
-import { format as formatDate } from "date-fns";
 import * as helper from "./utils/helper.js";
 import { checkUpdate } from "./utils/tool.js";
 import * as flow from "./utils/flow.js";
@@ -12,6 +11,16 @@ import { options, isSupportedReleaseCommand } from "./utils/command.js";
 import * as templateUtils from "./utils/template-utils.js";
 import { exitCodes } from "./utils/exit-codes.js";
 import { createError, normalizeError } from "./utils/errors.js";
+import {
+    deepMerge,
+    firstDefined,
+    isNonEmptyString,
+    isPlainObject,
+    renderConfigPattern,
+    resolveBoolean,
+    resolveOutputFormatCandidate,
+    resolveOutputFormatFromSources
+} from "./utils/runtime-config.js";
 
 let runtimeOutputFormat = "human";
 
@@ -476,18 +485,11 @@ function setRuntimeOutputFormat(format) {
 }
 
 function resolveOutputFormat(runtimeConfig) {
-    return resolveOutputFormatCandidate(
-        firstDefined(
-            options.outputFormat,
-            process.env.YABA_OUTPUT_FORMAT,
-            runtimeConfig?.output?.format,
-            "human"
-        )
+    return resolveOutputFormatFromSources(
+        options.outputFormat,
+        process.env.YABA_OUTPUT_FORMAT,
+        runtimeConfig?.output?.format
     );
-}
-
-function resolveOutputFormatCandidate(format) {
-    return `${format || ""}`.trim().toLowerCase() === "json" ? "json" : "human";
 }
 
 function createDoctorCheck(name, ok, message, required, exitCode, skipped = false) {
@@ -701,59 +703,6 @@ function resolveUserConfigPath() {
     }
 
     return path.join(homeDir, '.config', 'yaba', 'config.json');
-}
-
-function renderConfigPattern(pattern) {
-    if (!isNonEmptyString(pattern)) {
-        return undefined;
-    }
-
-    const now = new Date();
-    return pattern
-        .replaceAll('{yyyyMMdd}', formatDate(now, 'yyyyMMdd'))
-        .replaceAll('{yyyy-MM-dd}', formatDate(now, 'yyyy-MM-dd'));
-}
-
-function deepMerge(target, source) {
-    for (const [key, sourceValue] of Object.entries(source)) {
-        if (isPlainObject(sourceValue)) {
-            if (!isPlainObject(target[key])) {
-                target[key] = {};
-            }
-            deepMerge(target[key], sourceValue);
-        } else {
-            target[key] = sourceValue;
-        }
-    }
-}
-
-function isPlainObject(value) {
-    return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
-
-function isNonEmptyString(value) {
-    return typeof value === 'string' && value.trim().length !== 0;
-}
-
-function firstDefined(...values) {
-    for (const value of values) {
-        if (value !== undefined && value !== null) {
-            return value;
-        }
-    }
-    return undefined;
-}
-
-function resolveBoolean(primaryValue, secondaryValue, defaultValue) {
-    if (typeof primaryValue === 'boolean') {
-        return primaryValue;
-    }
-
-    if (typeof secondaryValue === 'boolean') {
-        return secondaryValue;
-    }
-
-    return defaultValue;
 }
 
 async function resolveOwner(runtimeConfig) {

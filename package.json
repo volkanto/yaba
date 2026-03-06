@@ -8,7 +8,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test"
   },
   "author": "Volkan Tokmak",
   "githubProfile": "https://github.com/volkanto",

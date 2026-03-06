@@ -1,4 +1,5 @@
 name: Publish package to GitHub Packages
+
 on:
   workflow_call:
     inputs:
@@ -36,17 +37,108 @@ jobs:
         with:
           ref: refs/tags/${{ inputs.tag }}
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
           registry-url: https://npm.pkg.github.com/
-          scope: ${{ github.repository_owner }}
-      - run: npm ci
-      - name: scope package name as required by GHPR
-        run: npm init -y --scope ${{ github.repository_owner }}
-      - run: npm publish --ignore-scripts
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run test suite
+        run: npm test
+
+      - name: Resolve tag name
+        id: tag
+        run: |
+          TAG="${{ inputs.tag }}"
+          if [ -z "$TAG" ]; then
+            TAG="${{ github.ref_name }}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Verify tag matches package version
+        run: |
+          PKG_VERSION="$(node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version")"
+          EXPECTED_TAG="v$PKG_VERSION"
+
+          if [ -z "${{ steps.tag.outputs.tag }}" ]; then
+            echo "No tag resolved. Provide a tag input like $EXPECTED_TAG."
+            exit 1
+          fi
+
+          if [ "${{ steps.tag.outputs.tag }}" != "$EXPECTED_TAG" ]; then
+            echo "Tag ${{ steps.tag.outputs.tag }} does not match package version $EXPECTED_TAG."
+            exit 1
+          fi
+
+      - name: Prepare package manifest for GitHub Packages
+        id: manifest
+        env:
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          OWNER="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          if [ -z "$OWNER" ]; then
+            echo "Unable to resolve repository owner for package scoping."
+            exit 1
+          fi
+
+          SCOPED_NAME="$(OWNER="$OWNER" node - <<'NODE'
+          const fs = require('fs');
+          const owner = process.env.OWNER;
+          const pkgPath = 'package.json';
+          const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+
+          const baseName = pkg.name && pkg.name.includes('/')
+            ? pkg.name.split('/').pop()
+            : pkg.name;
+
+          if (!baseName) {
+            console.error('package.json name is missing.');
+            process.exit(1);
+          }
+
+          pkg.name = `@${owner}/${baseName}`;
+          pkg.publishConfig = {
+            ...(pkg.publishConfig || {}),
+            registry: 'https://npm.pkg.github.com'
+          };
+
+          fs.writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
+          process.stdout.write(pkg.name);
+          NODE
+          )"
+
+          echo "scoped_name=${SCOPED_NAME}" >> "$GITHUB_OUTPUT"
+          echo "Prepared package name for GitHub Packages: ${SCOPED_NAME}"
+
+      - name: Check if this version already exists on GitHub Packages
+        id: gpr_check
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
-      - name: "Print errors"
+        run: |
+          PKG_NAME="$(node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).name")"
+          PKG_VERSION="$(node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version")"
+
+          if npm view "${PKG_NAME}@${PKG_VERSION}" version --registry=https://npm.pkg.github.com >/dev/null 2>&1; then
+            echo "already_published=true" >> "$GITHUB_OUTPUT"
+            echo "Package ${PKG_NAME}@${PKG_VERSION} is already published on GitHub Packages."
+          else
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to GitHub Packages
+        if: steps.gpr_check.outputs.already_published != 'true'
+        run: npm publish --ignore-scripts --registry=https://npm.pkg.github.com
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+
+      - name: Skip publish (already published)
+        if: steps.gpr_check.outputs.already_published == 'true'
+        run: echo "This package version is already published on GitHub Packages. Skipping."
+
+      - name: Print errors
         if: ${{ failure() }}
         run: cat /home/runner/.npm/_logs/*

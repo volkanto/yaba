@@ -30,6 +30,22 @@ jobs:
         run: npm ci
       - name: Run test suite
         run: npm test
+      - name: Verify release tag matches package version
+        run: |
+          PKG_VERSION="$(node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version")"
+          EXPECTED_TAG="v${PKG_VERSION}"
+          PROVIDED_TAG="${{ github.event.inputs.tag-name }}"
+
+          if [ -z "$PROVIDED_TAG" ]; then
+            echo "Missing release tag input. Provide a tag like ${EXPECTED_TAG}."
+            exit 1
+          fi
+
+          if [ "$PROVIDED_TAG" != "$EXPECTED_TAG" ]; then
+            echo "Tag mismatch: provided '$PROVIDED_TAG' but package.json expects '$EXPECTED_TAG'."
+            echo "Update package.json version or use the matching tag."
+            exit 1
+          fi
 
   release:
     needs: validate
@@ -41,6 +57,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
       - name: Install Yaba
         run: npm install -g yaba-release-cli
       - name: Create GitHub release

@@ -66,6 +66,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run test suite
+        run: npm test
+
       - name: Resolve tag name
         id: tag
         run: |

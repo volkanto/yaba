@@ -160,6 +160,12 @@ Run setup diagnostics in JSON format:
 yaba doctor --format json
 ```
 
+`yaba doctor` now reports:
+
+- token type (GitHub Actions token, fine-grained PAT, classic PAT, or unknown),
+- OAuth scope summary when available,
+- repository access check results with actionable remediation guidance.
+
 Create local config template:
 
 ```shell

@@ -245,6 +245,59 @@ export async function retrieveUsername() {
 }
 
 /**
+ * inspects auth context and optionally checks repository access when owner/repo are provided.
+ *
+ * @param owner optional repository owner for access check
+ * @param repo optional repository name for access check
+ * @returns {Promise<{login: string, oauthScopes: string, repoAccess: {checked: boolean, ok: boolean, owner?: string, repo?: string, status?: number|null, message?: string|null}}>}
+ */
+export async function inspectGithubAuth(owner, repo) {
+    try {
+        const userResponse = await octokit.request('GET /user');
+        const resolvedOwner = (typeof owner === 'string' && owner.trim())
+            ? owner.trim()
+            : userResponse.data.login;
+        const diagnostics = {
+            login: userResponse.data.login,
+            oauthScopes: userResponse.headers?.['x-oauth-scopes'] || '',
+            repoAccess: {
+                checked: false,
+                ok: false
+            }
+        };
+
+        if (typeof repo === 'string' && repo.trim()) {
+            try {
+                await octokit.request('GET /repos/{owner}/{repo}', {
+                    owner: resolvedOwner,
+                    repo: repo
+                });
+
+                diagnostics.repoAccess = {
+                    checked: true,
+                    ok: true,
+                    owner: resolvedOwner,
+                    repo: repo.trim()
+                };
+            } catch (error) {
+                diagnostics.repoAccess = {
+                    checked: true,
+                    ok: false,
+                    owner: resolvedOwner,
+                    repo: repo.trim(),
+                    status: error?.status || error?.response?.status || null,
+                    message: error?.response?.data?.message || error?.message || null
+                };
+            }
+        }
+
+        return diagnostics;
+    } catch (error) {
+        throw mapGithubError(error, 'Could not retrieve authenticated user.');
+    }
+}
+
+/**
  * publishes the given message to the slack channels which are defined in the environment variables
  * @param publish decides if the given message to be published to the slack channels
  * @param repo the repository to prepare the slack message header

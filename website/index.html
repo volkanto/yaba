@@ -45,11 +45,12 @@
 
     <main id="top">
       <section class="hero section reveal">
-        <p class="eyebrow">GitHub Release Operations</p>
+        <p class="eyebrow">GitHub Release Operations • v2.0.2</p>
         <h1>Ship consistent GitHub releases with one CLI.</h1>
         <p class="hero-copy">
           Yaba helps teams prepare changelogs, preview release payloads, create GitHub releases, and wire Slack notifications
-          into repeatable release workflows.
+          into repeatable release workflows. The latest patch hardens CI/release contracts, adds token-aware doctor diagnostics,
+          and improves default safety in config handling.
         </p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="https://www.npmjs.com/package/yaba-release-cli" target="_blank" rel="noopener noreferrer">Install from npm</a>
@@ -115,12 +116,12 @@
             <p>Publish release announcements with <code>--publish</code> when <code>YABA_SLACK_HOOK_URL</code> is configured.</p>
           </div>
           <div>
-            <h3>JSON output mode</h3>
-            <p>Use <code>--format json</code> to integrate with bots, CI checks, or custom release tooling.</p>
+            <h3>Workflow hardening</h3>
+            <p>Release and publish workflows enforce tests and strict <code>tag == v&lt;package.json.version&gt;</code> guards.</p>
           </div>
           <div>
-            <h3>Repo auto-detection</h3>
-            <p>Reads <code>remote.origin.url</code> when possible, with explicit <code>--repo</code>/<code>--owner</code> overrides.</p>
+            <h3>Doctor auth diagnostics</h3>
+            <p>Reports token type, scopes (when available), and repository access checks with actionable guidance.</p>
           </div>
         </div>
       </section>
@@ -141,7 +142,7 @@
           </li>
           <li>
             <h3>Validate environment</h3>
-            <p><code>yaba doctor</code></p>
+            <p><code>yaba doctor</code> (includes token type + repo access diagnostics)</p>
           </li>
           <li>
             <h3>Preview release</h3>
@@ -162,6 +163,12 @@
   --repo my-repo \
   --owner my-org \
   --format json</code></pre>
+          </div>
+          <div class="code-panel">
+            <h3>Release pipeline contract</h3>
+            <pre><code>- run npm ci and npm test
+- enforce tag = v&lt;package.json.version&gt;
+- fail early on validation mismatch</code></pre>
           </div>
           <div class="code-panel">
             <h3>Environment variables</h3>

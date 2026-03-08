@@ -10,6 +10,7 @@ import { resolveOutputFormatFromSources } from "./utils/runtime-config.js";
 import { runReleaseCommand } from "./commands/release-command.js";
 import { runDoctorCommand } from "./commands/doctor-command.js";
 import { runConfigInitCommand } from "./commands/config-init-command.js";
+import { runConfigValidateCommand } from "./commands/config-validate-command.js";
 import {
     createOutputController,
     printDeprecationWarnings
@@ -35,6 +36,10 @@ async function runYaba() {
 
         if (!output.isJson()) {
             printDeprecationWarnings(options.deprecationWarnings);
+        }
+
+        if (isConfigValidateCommand(options)) {
+            return runConfigValidateCommand(options, runtimeConfig, output.isJson());
         }
 
         if (isDoctorCommand(options)) {
@@ -68,7 +73,7 @@ function validateCommandSupport() {
     }
 
     throw createError(
-        "Unsupported command. Use 'yaba release create --help', 'yaba release preview --help', 'yaba doctor --help', or 'yaba config init --help' for usage details.",
+        "Unsupported command. Use 'yaba release create --help', 'yaba release preview --help', 'yaba doctor --help', 'yaba config init --help', or 'yaba config validate --help' for usage details.",
         exitCodes.VALIDATION
     );
 }
@@ -91,4 +96,8 @@ function isDoctorCommand(parsedOptions) {
 
 function isConfigInitCommand(parsedOptions) {
     return parsedOptions.commandName === "config.init";
+}
+
+function isConfigValidateCommand(parsedOptions) {
+    return parsedOptions.commandName === "config.validate";
 }

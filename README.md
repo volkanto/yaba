@@ -144,6 +144,7 @@ Supported commands:
 - `yaba release preview`: prepares and prints release details without creating a release.
 - `yaba doctor`: runs environment and connectivity diagnostics.
 - `yaba config init`: creates a `yaba.config.json` template in the current directory.
+- `yaba config validate`: validates resolved config values and reports schema issues.
 
 Create release with the new command format:
 
@@ -209,6 +210,18 @@ Create config template at a custom location:
 
 ```shell
 yaba config init --config ./config/yaba.config.json
+```
+
+Validate config at a custom location:
+
+```shell
+yaba config validate --config ./config/yaba.config.json
+```
+
+Validate config in JSON format:
+
+```shell
+yaba config validate --config ./config/yaba.config.json --format json
 ```
 
 When `--format json` is used, `yaba` prints machine-readable command results to `stdout` and errors to `stderr`.

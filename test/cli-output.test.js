@@ -70,3 +70,42 @@ test('config init supports JSON output and --force overwrite semantics', () => {
 
     fs.rmSync(tmpDir, { recursive: true, force: true });
 });
+
+test('config validate returns success payload for valid config', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'yaba-config-validate-success-'));
+    const configPath = path.join(tmpDir, 'yaba.config.json');
+    const template = runCli(['config', 'init', '--format', 'json', '--config', configPath]);
+    assert.equal(template.status, 0);
+
+    const result = runCli(['config', 'validate', '--format', 'json', '--config', configPath]);
+    assert.equal(result.status, 0);
+    const payload = JSON.parse(result.stdout.trim());
+    assert.equal(payload.command, 'config.validate');
+    assert.equal(payload.status, 'success');
+    assert.equal(payload.valid, true);
+    assert.deepEqual(payload.issues, []);
+    assert.ok(payload.sources.some(item => item.endsWith('yaba.config.json')));
+
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+test('config validate returns failure payload for invalid config fields', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'yaba-config-validate-failure-'));
+    const configPath = path.join(tmpDir, 'yaba.config.json');
+    fs.writeFileSync(configPath, JSON.stringify({
+        release: {
+            draft: 'yes'
+        }
+    }, null, 2));
+
+    const result = runCli(['config', 'validate', '--format', 'json', '--config', configPath]);
+    assert.equal(result.status, 1);
+    const payload = JSON.parse(result.stdout.trim());
+    assert.equal(payload.command, 'config.validate');
+    assert.equal(payload.status, 'failure');
+    assert.equal(payload.valid, false);
+    assert.equal(payload.exitCode, 1);
+    assert.ok(payload.issues.some(item => item.includes('release.draft')));
+
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+});

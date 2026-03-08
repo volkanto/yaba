@@ -5,6 +5,7 @@ import { slackProvider } from "./providers/slack-provider.js";
 const defaultProviderRegistry = {
     slack: slackProvider
 };
+const supportedProviderNames = Object.keys(defaultProviderRegistry);
 
 export async function publishReleaseNotifications(payload, providerRegistry = defaultProviderRegistry) {
     if (payload.publish !== true) {
@@ -48,3 +49,5 @@ export function resolveProviderNames(providerNames) {
 
     return [...new Set(normalized)];
 }
+
+export const SUPPORTED_NOTIFICATION_PROVIDERS = supportedProviderNames;

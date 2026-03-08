@@ -54,6 +54,12 @@ test('supports config init command', () => {
     assert.equal(options.commandName, 'config.init');
 });
 
+test('supports config validate command', () => {
+    const { options, supported } = parseOptions(['config', 'validate']);
+    assert.equal(supported, true);
+    assert.equal(options.commandName, 'config.validate');
+});
+
 test('rejects unsupported command input', () => {
     const { options, supported } = parseOptions(['foo']);
     assert.equal(supported, false);

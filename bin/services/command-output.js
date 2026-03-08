@@ -129,3 +129,30 @@ export function printConfigInitSummary(configPath, overwritten) {
 
     console.log("\n" + boxen(lines, configBoxOptions));
 }
+
+export function printConfigValidateSummary(result) {
+    const issueLines = result.issues.length === 0
+        ? "No validation issues found."
+        : result.issues.map((issue, index) => `${index + 1}) ${issue}`).join("\n");
+
+    const lines = [
+        `Config path: ${result.path}`,
+        `Status: ${result.valid ? "valid" : "invalid"}`,
+        result.sources.length > 0
+            ? `Loaded sources: ${result.sources.join(", ")}`
+            : "Loaded sources: defaults only",
+        "",
+        issueLines
+    ].join("\n");
+
+    const boxOptions = {
+        padding: 1,
+        title: "Config Validate",
+        titleAlignment: "left",
+        align: "left",
+        borderColor: result.valid ? "green" : "yellow",
+        borderStyle: "round"
+    };
+
+    console.log("\n" + boxen(lines, boxOptions));
+}

@@ -37,6 +37,7 @@
       <nav class="site-nav" id="site-nav">
         <a href="#commands">Commands</a>
         <a href="#capabilities">Capabilities</a>
+        <a href="#updates">Updates</a>
         <a href="#quickstart">Quickstart</a>
         <a href="#automation">Automation</a>
         <a href="#install">Install</a>
@@ -45,12 +46,12 @@
 
     <main id="top">
       <section class="hero section reveal">
-        <p class="eyebrow">GitHub Release Operations • v2.0.2</p>
+        <p class="eyebrow">GitHub Release Operations • Since v2.0.2</p>
         <h1>Ship consistent GitHub releases with one CLI.</h1>
         <p class="hero-copy">
           Yaba helps teams prepare changelogs, preview release payloads, create GitHub releases, and wire Slack notifications
-          into repeatable release workflows. The latest patch hardens CI/release contracts, adds token-aware doctor diagnostics,
-          and improves default safety in config handling.
+          into repeatable release workflows. Recent upgrades add target-based release generation, release safety controls,
+          config validation, channel-specific release notes, strategy-based tag generation, and resilient Slack retries.
         </p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="https://www.npmjs.com/package/yaba-release-cli" target="_blank" rel="noopener noreferrer">Install from npm</a>
@@ -59,15 +60,15 @@
         <div class="terminal-card">
           <p><span class="prompt">$</span> npm i -g yaba-release-cli</p>
           <p><span class="prompt">$</span> yaba doctor</p>
-          <p><span class="prompt">$</span> yaba release preview --repo my-repo --format json</p>
-          <p><span class="prompt">$</span> yaba release create --repo my-repo --publish --no-prompt</p>
+          <p><span class="prompt">$</span> yaba release preview --repo my-repo --target release/2.1 --format json</p>
+          <p><span class="prompt">$</span> yaba release create --repo my-repo --tag-strategy semver --publish --no-prompt</p>
         </div>
       </section>
 
       <section class="section reveal" id="commands">
         <div class="section-heading">
           <p class="eyebrow">Core Commands</p>
-          <h2>Everything starts from four explicit commands</h2>
+          <h2>Everything starts from five explicit commands</h2>
         </div>
         <div class="card-grid">
           <article class="card">
@@ -90,6 +91,11 @@
             <p>Creates a project config template (<code>yaba.config.json</code>) for shared defaults.</p>
             <p class="meta">Use <code>--force</code> to overwrite existing config.</p>
           </article>
+          <article class="card">
+            <h3><code>config validate</code></h3>
+            <p>Validates resolved configuration schema before release operations.</p>
+            <p class="meta">Great for CI guardrails with <code>--format json</code>.</p>
+          </article>
         </div>
       </section>
 
@@ -100,29 +106,62 @@
         </div>
         <div class="capability-grid">
           <div>
-            <h3>Changelog generation</h3>
-            <p>Diffs commits from latest release tag, with head-branch fallback if no release exists yet.</p>
+            <h3>Target-based releases</h3>
+            <p>Generate and create releases from an explicit branch, tag, or commit SHA via <code>--target</code>.</p>
           </div>
           <div>
-            <h3>Deterministic exit codes</h3>
-            <p>Structured outcomes for success, validation failures, auth errors, network errors, and upstream failures.</p>
+            <h3>Release safety controls</h3>
+            <p>Use <code>--allow-empty</code>, <code>--fail-on-empty</code>, and <code>--max-commits</code> to enforce policy.</p>
           </div>
           <div>
-            <h3>Config precedence</h3>
-            <p><code>flags &gt; env vars &gt; project config &gt; user config &gt; defaults</code>.</p>
+            <h3>Channel-specific release notes</h3>
+            <p>GitHub notes can be PR-label grouped, while Slack uses a human-readable newsletter format.</p>
           </div>
           <div>
-            <h3>Slack publishing</h3>
-            <p>Publish release announcements with <code>--publish</code> when <code>YABA_SLACK_HOOK_URL</code> is configured.</p>
+            <h3>Tag strategy engine</h3>
+            <p>Choose <code>pattern</code>, <code>semver</code>, or <code>sha</code>, plus conflict policy and max attempts.</p>
           </div>
           <div>
-            <h3>Workflow hardening</h3>
-            <p>Release and publish workflows enforce tests and strict <code>tag == v&lt;package.json.version&gt;</code> guards.</p>
+            <h3>Resilient Slack delivery</h3>
+            <p>Publish retries transient webhook failures with exponential backoff (default 3 attempts).</p>
           </div>
           <div>
-            <h3>Doctor auth diagnostics</h3>
-            <p>Reports token type, scopes (when available), and repository access checks with actionable guidance.</p>
+            <h3>Config + diagnostics tooling</h3>
+            <p>Includes <code>config validate</code> and token-aware <code>doctor</code> output for fast issue triage.</p>
           </div>
+        </div>
+      </section>
+
+      <section class="section reveal" id="updates">
+        <div class="section-heading">
+          <p class="eyebrow">Recent Updates</p>
+          <h2>What changed after v2.0.2</h2>
+        </div>
+        <div class="card-grid">
+          <article class="card">
+            <h3>Release workflow controls</h3>
+            <p>Added target commitish support and release safety guardrails for empty or oversized changelogs.</p>
+          </article>
+          <article class="card">
+            <h3>Notification architecture</h3>
+            <p>Introduced provider-based notification abstraction and improved publish flow reliability.</p>
+          </article>
+          <article class="card">
+            <h3>Config maturity</h3>
+            <p>Added <code>config validate</code> and stronger schema checks for runtime configuration quality.</p>
+          </article>
+          <article class="card">
+            <h3>Release notes evolution</h3>
+            <p>Added label-grouped GitHub notes with fallback and a dedicated Slack newsletter-style template.</p>
+          </article>
+          <article class="card">
+            <h3>Tag policy system</h3>
+            <p>Added strategy-based tags (<code>pattern</code>, <code>semver</code>, <code>sha</code>) with conflict handling.</p>
+          </article>
+          <article class="card">
+            <h3>Test + docs upgrades</h3>
+            <p>Expanded integration coverage and refreshed architecture/development documentation for maintainability.</p>
+          </article>
         </div>
       </section>
 
@@ -145,8 +184,12 @@
             <p><code>yaba doctor</code> (includes token type + repo access diagnostics)</p>
           </li>
           <li>
+            <h3>Validate config</h3>
+            <p><code>yaba config validate --format json</code></p>
+          </li>
+          <li>
             <h3>Preview release</h3>
-            <p><code>yaba release preview --repo your-repo</code></p>
+            <p><code>yaba release preview --repo your-repo --target main</code></p>
           </li>
         </ol>
       </section>
@@ -167,7 +210,9 @@
           <div class="code-panel">
             <h3>Release pipeline contract</h3>
             <pre><code>- run npm ci and npm test
-- enforce tag = v&lt;package.json.version&gt;
+- run yaba config validate --format json
+- enforce release safety policy
+- use semver/sha/pattern tag strategy intentionally
 - fail early on validation mismatch</code></pre>
           </div>
           <div class="code-panel">

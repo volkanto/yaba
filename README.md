@@ -102,6 +102,12 @@ Notification providers are now resolved through config. Slack remains provider #
 }
 ```
 
+Release note rendering is channel-specific:
+
+- GitHub release notes: grouped by PR labels when available (`type:feature`, `type:fix`, `type:docs`, `type:breaking`, `dependencies`/`deps`).
+- Slack release notes: rendered as a short newsletter for human readers.
+- Fallback: if label metadata is missing, GitHub notes fall back to the legacy commit-list structure.
+
 ## Command Line Usage
 
 Run `yaba` with `--help` options:

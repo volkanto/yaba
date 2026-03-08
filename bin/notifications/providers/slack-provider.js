@@ -8,7 +8,8 @@ export const slackProvider = {
             context.repo,
             context.changelog,
             context.releaseUrl,
-            context.releaseName
+            context.releaseName,
+            context.compareUrl
         );
     }
 };

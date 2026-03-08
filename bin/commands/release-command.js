@@ -6,6 +6,7 @@ import { createError } from "../utils/errors.js";
 import { isNonEmptyString } from "../utils/runtime-config.js";
 import { publishReleaseNotifications } from "../notifications/publisher.js";
 import { printChangelog, printJson, printReleasePreview } from "../services/command-output.js";
+import { buildReleaseNotesBundle } from "../services/release-notes-service.js";
 import {
     enforceReleaseSafety,
     shouldCreateRelease,
@@ -82,7 +83,15 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
 
     if (shouldCreateRelease(changeLog.length, options.changelog === true, releaseContext.allowEmpty === true)) {
         const lastReleaseTag = resolveLastReleaseTag(lastRelease, releaseTarget);
-        const releaseResult = await prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseContext, releaseTarget);
+        const releaseResult = await prepareRelease(
+            changeLog,
+            preparedChangeLog,
+            repoOwner,
+            releaseRepo,
+            lastReleaseTag,
+            releaseContext,
+            releaseTarget
+        );
 
         if (isJsonOutput) {
             printJson({
@@ -97,6 +106,7 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
                 targetCommitish: releaseResult.targetCommitish,
                 releaseUrl: releaseResult.releaseUrl,
                 notificationProviders: releaseResult.notificationProviders,
+                releaseNotesMode: releaseResult.releaseNotesMode,
                 allowEmpty: releaseContext.allowEmpty === true,
                 failOnEmpty: releaseContext.failOnEmpty === true,
                 maxCommits: releaseContext.maxCommits ?? null,
@@ -116,7 +126,7 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
     return exitCodes.SUCCESS;
 }
 
-async function prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseContext, targetCommitish) {
+async function prepareRelease(changeLog, preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseContext, targetCommitish) {
     const hasReleaseCreatePermission = await helper.releaseCreatePermit(releaseContext.interactive);
 
     if (!hasReleaseCreatePermission) {
@@ -124,14 +134,26 @@ async function prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastRel
     }
 
     const releaseTag = helper.releaseTagName(releaseContext.tag);
-    const changeLogDetails = templateUtils.generateChangelog(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseTag);
     const releaseName = helper.releaseName(releaseContext.releaseName);
+    const releaseNotes = await buildReleaseNotesBundle({
+        owner: repoOwner,
+        repo: releaseRepo,
+        previousTag: lastReleaseTag,
+        currentTag: releaseTag,
+        releaseName: releaseName,
+        preparedChangeLog: preparedChangeLog,
+        changeLog: changeLog,
+        fetchPullRequest: async pullNumber => {
+            return await flow.fetchPullRequestByNumber(repoOwner, releaseRepo, pullNumber);
+        }
+    });
+
     const releaseUrl = await flow.createRelease(
         repoOwner,
         releaseRepo,
         releaseContext.draft,
         releaseName,
-        changeLogDetails,
+        releaseNotes.githubReleaseBody,
         releaseContext.tag,
         targetCommitish
     );
@@ -141,9 +163,10 @@ async function prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastRel
         providerNames: releaseContext.notificationProviders,
         context: {
             repo: releaseRepo,
-            changelog: preparedChangeLog,
+            changelog: releaseNotes.slackNewsletterBody,
             releaseUrl: releaseUrl,
-            releaseName: releaseName
+            releaseName: releaseName,
+            compareUrl: releaseNotes.compareUrl
         }
     });
 
@@ -154,6 +177,7 @@ async function prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastRel
         targetCommitish: targetCommitish,
         releaseUrl: releaseUrl,
         notificationProviders: notificationResult.providers,
+        releaseNotesMode: releaseNotes.mode,
         draft: releaseContext.draft === true,
         publishRequested: releaseContext.publish === true
     };

@@ -1,38 +1,32 @@
 {
-  "text": ":loudspeaker: Release Notes - {repo}",
+  "text": ":loudspeaker: {releaseName} for {repo}",
   "blocks": [
     {
       "type": "header",
       "text": {
         "type": "plain_text",
-        "text": ":loudspeaker: Release Notes - {repo}"
+        "text": ":loudspeaker: {releaseName} for {repo}"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "{newsletterBody}"
       }
     },
     {
       "type": "divider"
     },
     {
-      "type": "section",
-      "text": {
-        "type": "mrkdwn",
-        "text": "<!here> new version will be deployed for `{repo}` soon! :rocket:"
-      }
-    },
-    {
-      "type": "section",
-      "text": {
-        "type": "mrkdwn",
-        "text": "```{changelog}```"
-      }
-    },
-    {
-      "type": "section",
-      "text": {
-        "type": "mrkdwn",
-        "text": "Visit release page: <{releaseUrl}|{releaseName}>"
-      }
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "<{releaseUrl}|Release Notes> | <{compareUrl}|Compare Changes>"
+        }
+      ]
     }
   ]
 }
-
 

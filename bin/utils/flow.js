@@ -238,6 +238,34 @@ export async function createRelease(owner, repo, draft, name, body, tag_name, ta
 }
 
 /**
+ * fetches pull request metadata by number.
+ *
+ * @param owner the repository owner
+ * @param repo the repository name
+ * @param pullNumber the pull request number
+ * @returns {Promise<{number: number, title: string, labels: string[]}>}
+ */
+export async function fetchPullRequestByNumber(owner, repo, pullNumber) {
+    try {
+        const { data: pullRequest } = await octokit.request('GET /repos/{owner}/{repo}/pulls/{pull_number}', {
+            owner: owner,
+            repo: repo,
+            pull_number: pullNumber
+        });
+
+        return {
+            number: pullRequest.number,
+            title: pullRequest.title,
+            labels: Array.isArray(pullRequest.labels)
+                ? pullRequest.labels.map(item => item?.name).filter(Boolean)
+                : []
+        };
+    } catch (error) {
+        throw mapGithubError(error, `Could not fetch pull request #${pullNumber}.`);
+    }
+}
+
+/**
  * validates and resolves a target commit-ish (branch, tag, or SHA) to a commit SHA.
  *
  * @param owner repository owner
@@ -335,7 +363,7 @@ export async function inspectGithubAuth(owner, repo) {
  * @param releaseUrl the release tag url on Github
  * @param releaseName the title of the release
  */
-export async function publishToSlack(publish, repo, changelog, releaseUrl, releaseName) {
+export async function publishToSlack(publish, repo, changelog, releaseUrl, releaseName, compareUrl) {
 
     if (publish == true) {
 
@@ -353,7 +381,7 @@ export async function publishToSlack(publish, repo, changelog, releaseUrl, relea
             throw createError('Slack publish requested but no valid webhook URL exists.', exitCodes.VALIDATION);
         }
 
-        const message = helper.prepareSlackMessage(repo, changelog, releaseUrl, releaseName);
+        const message = helper.prepareSlackMessage(repo, changelog, releaseUrl, releaseName, compareUrl);
         try {
             for (const channelUrl of slackHookUrlList) {
                 await postToSlack(channelUrl, message);

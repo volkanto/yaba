@@ -28,6 +28,33 @@ export function generateChangelog(body, owner, repo, previousTag, currentTag) {
 }
 
 /**
+ * prepares grouped GitHub release notes body from mapped sections.
+ *
+ * @param {*} owner the owner of the repository
+ * @param {*} repo the repository name
+ * @param {*} previousTag the previous release tag/reference
+ * @param {*} currentTag the new release tag
+ * @param {*} sections grouped markdown sections
+ * @returns {string}
+ */
+export function generateGroupedGithubReleaseNotes(owner, repo, previousTag, currentTag, sections) {
+    const template = this.retrieveFile(appConstants.GITHUB_RELEASE_TEMPLATE);
+    return format(template, {
+        owner: owner,
+        repo: repo,
+        lastTag: previousTag,
+        newTag: currentTag,
+        highlights: sections.highlights,
+        breakingChangesSection: sections.breakingChangesSection,
+        featuresSection: sections.featuresSection,
+        fixesSection: sections.fixesSection,
+        dependenciesSection: sections.dependenciesSection,
+        documentationSection: sections.documentationSection,
+        internalSection: sections.internalSection
+    });
+}
+
+/**
  * returns the file with the given path.
  * @param {*} _path the path of the file
  * @returns  the file.

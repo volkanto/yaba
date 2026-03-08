@@ -10,6 +10,19 @@ export function validateRuntimeConfigSchema(runtimeConfig, supportedNotification
     validateOptionalString(runtimeConfig?.github?.owner, "github.owner", issues);
     validateOptionalString(runtimeConfig?.release?.repo, "release.repo", issues);
     validateOptionalString(runtimeConfig?.release?.tagPattern, "release.tagPattern", issues);
+    validateOptionalEnum(
+        runtimeConfig?.release?.tagStrategy,
+        "release.tagStrategy",
+        ["pattern", "semver", "sha"],
+        issues
+    );
+    validateOptionalEnum(
+        runtimeConfig?.release?.tagOnConflict,
+        "release.tagOnConflict",
+        ["increment", "fail"],
+        issues
+    );
+    validateOptionalPositiveInteger(runtimeConfig?.release?.tagMaxAttempts, "release.tagMaxAttempts", issues);
     validateOptionalString(runtimeConfig?.release?.namePattern, "release.namePattern", issues);
     validateOptionalString(runtimeConfig?.release?.target, "release.target", issues);
 
@@ -46,6 +59,22 @@ function validateOptionalString(value, path, issues) {
 
     if (!isNonEmptyString(value)) {
         issues.push(`${path} must be a non-empty string when provided.`);
+    }
+}
+
+function validateOptionalEnum(value, path, supportedValues, issues) {
+    if (value == null) {
+        return;
+    }
+
+    if (!isNonEmptyString(value)) {
+        issues.push(`${path} must be one of: ${supportedValues.join(", ")}.`);
+        return;
+    }
+
+    const normalized = value.trim().toLowerCase();
+    if (!supportedValues.includes(normalized)) {
+        issues.push(`${path} must be one of: ${supportedValues.join(", ")}.`);
     }
 }
 

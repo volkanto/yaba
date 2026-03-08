@@ -13,12 +13,18 @@ test("validateRuntimeConfigSchema reports invalid boolean and integer fields", (
     const config = buildDefaultConfigTemplate();
     config.release.draft = "true";
     config.release.allowEmpty = "true";
+    config.release.tagStrategy = "invalid";
+    config.release.tagOnConflict = "invalid";
+    config.release.tagMaxAttempts = -2;
     config.release.maxCommits = -1;
     config.release.firstReleaseMaxCommits = 0;
 
     const issues = validateRuntimeConfigSchema(config, ["slack"]);
     assert.ok(issues.some(item => item.includes("release.draft")));
     assert.ok(issues.some(item => item.includes("release.allowEmpty")));
+    assert.ok(issues.some(item => item.includes("release.tagStrategy")));
+    assert.ok(issues.some(item => item.includes("release.tagOnConflict")));
+    assert.ok(issues.some(item => item.includes("release.tagMaxAttempts")));
     assert.ok(issues.some(item => item.includes("release.maxCommits")));
     assert.ok(issues.some(item => item.includes("release.firstReleaseMaxCommits")));
 });

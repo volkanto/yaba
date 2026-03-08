@@ -7,6 +7,7 @@ import { isNonEmptyString } from "../utils/runtime-config.js";
 import { publishReleaseNotifications } from "../notifications/publisher.js";
 import { printChangelog, printJson, printReleasePreview } from "../services/command-output.js";
 import { buildReleaseNotesBundle } from "../services/release-notes-service.js";
+import { resolveReleaseTag } from "../services/tag-resolution-service.js";
 import {
     enforceReleaseSafety,
     shouldCreateRelease,
@@ -30,12 +31,22 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
 
     const headBranch = releaseContext.target ? null : await checkHeadBranch(repoOwner, releaseRepo);
     const releaseTarget = await resolveReleaseTarget(repoOwner, releaseRepo, releaseContext, headBranch);
+    const targetReference = isNonEmptyString(releaseContext.target) ? releaseContext.target : headBranch;
     const lastRelease = await flow.fetchLastRelease(repoOwner, releaseRepo);
+    const releaseTag = await resolveTagName(repoOwner, releaseRepo, releaseContext, releaseTarget, targetReference);
     const changeLog = await flow.prepareChangeLog(repoOwner, releaseRepo, releaseTarget, lastRelease);
     enforceReleaseSafety(changeLog.length, releaseContext);
 
     const preparedChangeLog = helper.prepareChangeLog(releaseContext.body, changeLog);
-    const releasePreview = buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRelease, releaseTarget, releaseContext);
+    const releasePreview = buildReleasePreview(
+        preparedChangeLog,
+        repoOwner,
+        releaseRepo,
+        lastRelease,
+        releaseTarget,
+        releaseContext,
+        releaseTag
+    );
 
     if (options.releaseCommand === "preview") {
         if (isJsonOutput) {
@@ -90,7 +101,8 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
             releaseRepo,
             lastReleaseTag,
             releaseContext,
-            releaseTarget
+            releaseTarget,
+            releaseTag
         );
 
         if (isJsonOutput) {
@@ -126,14 +138,13 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
     return exitCodes.SUCCESS;
 }
 
-async function prepareRelease(changeLog, preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseContext, targetCommitish) {
+async function prepareRelease(changeLog, preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseContext, targetCommitish, releaseTag) {
     const hasReleaseCreatePermission = await helper.releaseCreatePermit(releaseContext.interactive);
 
     if (!hasReleaseCreatePermission) {
         throw createError("Release was not prepared. Confirmation prompt was declined.", exitCodes.VALIDATION);
     }
 
-    const releaseTag = helper.releaseTagName(releaseContext.tag);
     const releaseName = helper.releaseName(releaseContext.releaseName);
     const releaseNotes = await buildReleaseNotesBundle({
         owner: repoOwner,
@@ -154,7 +165,7 @@ async function prepareRelease(changeLog, preparedChangeLog, repoOwner, releaseRe
         releaseContext.draft,
         releaseName,
         releaseNotes.githubReleaseBody,
-        releaseContext.tag,
+        releaseTag,
         targetCommitish
     );
 
@@ -188,6 +199,12 @@ async function resolveReleaseTarget(repoOwner, releaseRepo, releaseContext, fall
         return await flow.resolveTargetCommitish(repoOwner, releaseRepo, releaseContext.target.trim());
     }
 
+    const requiresCommitSha = releaseContext.tagStrategy === "sha"
+        || (isNonEmptyString(releaseContext.tagPattern) && releaseContext.tagPattern.includes("{shortSha}"));
+    if (requiresCommitSha) {
+        return await flow.resolveTargetCommitish(repoOwner, releaseRepo, fallbackHeadBranch);
+    }
+
     return fallbackHeadBranch;
 }
 
@@ -214,9 +231,23 @@ function resolveLastReleaseTag(lastRelease, fallbackRef) {
     return lastRelease?.tag_name || fallbackRef;
 }
 
-function buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRelease, releaseTarget, releaseContext) {
+async function resolveTagName(repoOwner, releaseRepo, releaseContext, releaseTarget, targetReference) {
+    return await resolveReleaseTag({
+        explicitTag: releaseContext.tag,
+        tagStrategy: releaseContext.tagStrategy,
+        tagPattern: releaseContext.tagPattern,
+        tagOnConflict: releaseContext.tagOnConflict,
+        tagMaxAttempts: releaseContext.tagMaxAttempts,
+        targetCommitish: releaseTarget,
+        targetReference: targetReference,
+        tagExists: async tagName => {
+            return await flow.tagExists(repoOwner, releaseRepo, tagName);
+        }
+    });
+}
+
+function buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRelease, releaseTarget, releaseContext, releaseTag) {
     const lastReleaseTag = resolveLastReleaseTag(lastRelease, releaseTarget);
-    const releaseTag = helper.releaseTagName(releaseContext.tag);
     const releaseName = helper.releaseName(releaseContext.releaseName);
     const changelogBody = templateUtils.generateChangelog(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseTag);
     const releaseTagSource = lastRelease?.tag_name

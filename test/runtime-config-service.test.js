@@ -8,6 +8,10 @@ import {
 test("buildDefaultConfigTemplate includes nullable release target", () => {
     const template = buildDefaultConfigTemplate();
     assert.equal(template.release.target, null);
+    assert.equal(template.release.tagPattern, "prod_global_{yyyyMMdd}.{HHmm}");
+    assert.equal(template.release.tagStrategy, "pattern");
+    assert.equal(template.release.tagOnConflict, "increment");
+    assert.equal(template.release.tagMaxAttempts, 20);
     assert.equal(template.release.allowEmpty, false);
     assert.equal(template.release.failOnEmpty, false);
     assert.equal(template.release.maxCommits, null);
@@ -102,4 +106,31 @@ test("resolveReleaseContext marks invalid maxCommits as NaN", () => {
     );
 
     assert.equal(Number.isNaN(resolved.maxCommits), true);
+});
+
+test("resolveReleaseContext applies tag strategy policy values", () => {
+    const runtimeConfig = buildDefaultConfigTemplate();
+    runtimeConfig.release.tagStrategy = "pattern";
+    runtimeConfig.release.tagOnConflict = "increment";
+    runtimeConfig.release.tagMaxAttempts = 15;
+
+    const resolved = resolveReleaseContext(
+        {
+            tagStrategy: "semver",
+            tagOnConflict: "fail",
+            tagMaxAttempts: 5,
+            target: undefined,
+            releaseName: undefined,
+            tag: undefined,
+            draft: undefined,
+            publish: undefined,
+            interactive: undefined,
+            body: undefined
+        },
+        runtimeConfig
+    );
+
+    assert.equal(resolved.tagStrategy, "semver");
+    assert.equal(resolved.tagOnConflict, "fail");
+    assert.equal(resolved.tagMaxAttempts, 5);
 });

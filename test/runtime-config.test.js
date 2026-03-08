@@ -78,7 +78,7 @@ test('deepMerge ignores prototype-polluting keys', () => {
 });
 
 test('renderConfigPattern replaces date placeholders', () => {
-    const now = new Date('2026-03-06T08:00:00.000Z');
-    const rendered = renderConfigPattern('tag-{yyyyMMdd}-name-{yyyy-MM-dd}', now);
-    assert.equal(rendered, 'tag-20260306-name-2026-03-06');
+    const now = new Date('2026-03-06T08:00:05');
+    const rendered = renderConfigPattern('tag-{yyyyMMdd}-name-{yyyy-MM-dd}-time-{HHmm}-second-{HHmmss}', now);
+    assert.equal(rendered, 'tag-20260306-name-2026-03-06-time-0800-second-080005');
 });

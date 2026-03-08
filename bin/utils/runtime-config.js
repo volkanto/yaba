@@ -63,7 +63,9 @@ function renderConfigPattern(pattern, now = new Date()) {
 
     return pattern
         .replaceAll('{yyyyMMdd}', formatDate(now, 'yyyyMMdd'))
-        .replaceAll('{yyyy-MM-dd}', formatDate(now, 'yyyy-MM-dd'));
+        .replaceAll('{yyyy-MM-dd}', formatDate(now, 'yyyy-MM-dd'))
+        .replaceAll('{HHmm}', formatDate(now, 'HHmm'))
+        .replaceAll('{HHmmss}', formatDate(now, 'HHmmss'));
 }
 
 export {

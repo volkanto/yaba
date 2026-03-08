@@ -21,7 +21,7 @@ export function releaseDate() {
 
 /**
  * prepares the tag name of the release. if the given {@code tagName} is blank,
- * this prepares the tag name in 'prod_global_yyyy-MM-dd.1' format.
+ * this prepares the tag name in 'prod_global_yyyyMMdd.HHmm' format.
  *
  * @param tagName the given tag name
  * @returns {string|*} the prepared tag name
@@ -30,10 +30,30 @@ export function releaseTagName(tagName) {
 
     if (isBlank(tagName)) {
         const currentDate = format(new Date(), appConstants.TAG_DATE_FORMAT);
-        return `prod_global_${currentDate}.1`;
+        const currentMinute = format(new Date(), "HHmm");
+        return `prod_global_${currentDate}.${currentMinute}`;
     }
 
     return tagName;
+}
+
+/**
+ * promotes minute-precision prod_global tags to second precision.
+ *
+ * @param tagName tag candidate that may have collided
+ * @param now optional date for deterministic testing
+ * @returns {string|null} second-precision fallback tag, or null when template does not match
+ */
+export function promoteTagPrecisionToSeconds(tagName, now = new Date()) {
+    const normalized = `${tagName || ""}`.trim();
+    const matched = normalized.match(/^prod_global_(\d{8})\.(\d{4})$/);
+    if (!matched) {
+        return null;
+    }
+
+    const datePart = matched[1];
+    const secondPrecision = format(now, "HHmmss");
+    return `prod_global_${datePart}.${secondPrecision}`;
 }
 
 /**
@@ -193,6 +213,24 @@ function runGitCommand(args) {
         return null;
     }
     return command.stdout.trim();
+}
+
+/**
+ * validates the given tag name against git ref format rules.
+ *
+ * @param tagName the tag candidate to validate
+ * @returns {boolean}
+ */
+export function isValidGitTagName(tagName) {
+    if (isBlank(tagName)) {
+        return false;
+    }
+
+    const command = spawnSync('git', ['check-ref-format', '--allow-onelevel', `refs/tags/${tagName}`], {
+        encoding: 'utf8'
+    });
+
+    return command.status === 0;
 }
 
 function retrieveRepoNameFromRemote(remoteUrl) {

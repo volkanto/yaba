@@ -17,6 +17,23 @@ const commands = yargs(rawArguments)
     .option("o", {alias: "owner", describe: "The repository owner.", type: "string"})
     .option("r", {alias: "repo", describe: "The repository name.", type: "string"})
     .option("t", {alias: "tag", describe: "The name of the tag.", type: "string"})
+    .option("tag-strategy", {
+        describe: "Tag generation strategy.",
+        choices: ["pattern", "semver", "sha"],
+        defaultDescription: "from config (fallback: pattern)",
+        type: "string"
+    })
+    .option("tag-on-conflict", {
+        describe: "How to handle already existing tags.",
+        choices: ["increment", "fail"],
+        defaultDescription: "from config (fallback: increment)",
+        type: "string"
+    })
+    .option("tag-max-attempts", {
+        describe: "Maximum attempts while resolving a unique tag with increment policy.",
+        defaultDescription: "from config (fallback: 20)",
+        type: "number"
+    })
     .option("target", {
         describe: "Target commit-ish (branch, tag, or SHA) to generate and create the release from.",
         type: "string"
@@ -113,6 +130,7 @@ function normalizeOptions(parsed) {
     const draftProvided = wasFlagProvided("--draft") || wasFlagProvided("-d");
     const formatProvided = wasFlagProvided("--format");
     const maxCommitsProvided = wasFlagProvided("--max-commits");
+    const tagMaxAttemptsProvided = wasFlagProvided("--tag-max-attempts");
     const commandName = resolveCommand(parsed);
 
     normalized.releaseName = parsed.name ?? parsed["release-name"];
@@ -134,6 +152,9 @@ function normalizeOptions(parsed) {
     normalized.outputFormat = formatProvided ? parsed.format : undefined;
     normalized.configPath = parsed.config;
     normalized.target = parsed.target;
+    normalized.tagStrategy = parsed["tag-strategy"];
+    normalized.tagOnConflict = parsed["tag-on-conflict"];
+    normalized.tagMaxAttempts = tagMaxAttemptsProvided ? parsed["tag-max-attempts"] : undefined;
     normalized.allowEmpty = parsed["allow-empty"] === true;
     normalized.failOnEmpty = parsed["fail-on-empty"] === true;
     normalized.maxCommits = maxCommitsProvided ? parsed["max-commits"] : undefined;

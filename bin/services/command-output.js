@@ -70,6 +70,7 @@ export function printReleasePreview(releasePreview) {
         `Release name: ${releasePreview.releaseName}`,
         `New tag: ${releasePreview.releaseTag}`,
         `Previous tag: ${releasePreview.lastReleaseTag} (${releasePreview.releaseTagSource})`,
+        `Target commit-ish: ${releasePreview.targetCommitish}`,
         `Draft: ${releasePreview.draft ? "true" : "false"}`
     ].join("\n");
 

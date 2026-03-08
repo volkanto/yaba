@@ -16,6 +16,10 @@ const commands = yargs(rawArguments)
     .option("o", {alias: "owner", describe: "The repository owner.", type: "string"})
     .option("r", {alias: "repo", describe: "The repository name.", type: "string"})
     .option("t", {alias: "tag", describe: "The name of the tag.", type: "string"})
+    .option("target", {
+        describe: "Target commit-ish (branch, tag, or SHA) to generate and create the release from.",
+        type: "string"
+    })
     .option("n", {
         alias: ["name", "release-name"],
         describe: "The name of the release.",
@@ -113,6 +117,7 @@ function normalizeOptions(parsed) {
         : null;
     normalized.outputFormat = formatProvided ? parsed.format : undefined;
     normalized.configPath = parsed.config;
+    normalized.target = parsed.target;
     normalized.deprecationWarnings = collectDeprecationWarnings(parsed, commandName, yesProvided);
 
     return normalized;

@@ -96,6 +96,8 @@ Options:
   -o, --owner                 The repository owner.                      [string]
   -r, --repo                  The repository name.                       [string]
   -t, --tag                   The name of the tag.                       [string]
+      --target                Target commit-ish (branch, tag, or SHA) to generate
+                              and create the release from.               [string]
   -n, --name, --release-name  The name of the release.                   [string]
   -b, --body          Text describing the contents of the tag. If not provided,
                       the default changelog will be generated with the usage of
@@ -136,6 +138,12 @@ Create release with the new command format:
 yaba release create --repo my-repo --publish --no-prompt
 ```
 
+Create release from a specific commit/tag/branch target:
+
+```shell
+yaba release create --repo my-repo --target 1a2b3c4d --no-prompt
+```
+
 Preview release details without side effects:
 
 ```shell
@@ -146,6 +154,12 @@ Preview release details in JSON format:
 
 ```shell
 yaba release preview --repo my-repo --format json
+```
+
+Preview release details from a specific target reference:
+
+```shell
+yaba release preview --repo my-repo --target release/2.x
 ```
 
 Run setup diagnostics:

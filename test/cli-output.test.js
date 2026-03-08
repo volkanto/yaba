@@ -51,6 +51,8 @@ test('config init supports JSON output and --force overwrite semantics', () => {
     assert.equal(initialPayload.status, 'success');
     assert.equal(initialPayload.overwritten, false);
     assert.equal(fs.existsSync(configPath), true);
+    const configContent = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    assert.deepEqual(configContent.notifications.providers, ['slack']);
 
     const second = runCli(['config', 'init', '--format', 'json', '--config', configPath]);
     assert.equal(second.status, 1);

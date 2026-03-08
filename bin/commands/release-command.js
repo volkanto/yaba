@@ -4,6 +4,7 @@ import * as templateUtils from "../utils/template-utils.js";
 import { exitCodes } from "../utils/exit-codes.js";
 import { createError } from "../utils/errors.js";
 import { isNonEmptyString } from "../utils/runtime-config.js";
+import { publishReleaseNotifications } from "../notifications/publisher.js";
 import { printChangelog, printJson, printReleasePreview } from "../services/command-output.js";
 import {
     resolveOwner,
@@ -27,7 +28,7 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
     const changeLog = await flow.prepareChangeLog(repoOwner, releaseRepo, releaseTarget, lastRelease);
 
     const preparedChangeLog = helper.prepareChangeLog(releaseContext.body, changeLog);
-    const releasePreview = buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRelease, headBranch, releaseTarget, releaseContext);
+    const releasePreview = buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRelease, releaseTarget, releaseContext);
 
     if (options.releaseCommand === "preview") {
         if (isJsonOutput) {
@@ -89,6 +90,7 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
                 draft: releaseResult.draft,
                 targetCommitish: releaseResult.targetCommitish,
                 releaseUrl: releaseResult.releaseUrl,
+                notificationProviders: releaseResult.notificationProviders,
                 notified: releaseResult.publishRequested
             });
         }
@@ -125,7 +127,16 @@ async function prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastRel
         targetCommitish
     );
 
-    await flow.publishToSlack(releaseContext.publish, releaseRepo, preparedChangeLog, releaseUrl, releaseName);
+    const notificationResult = await publishReleaseNotifications({
+        publish: releaseContext.publish,
+        providerNames: releaseContext.notificationProviders,
+        context: {
+            repo: releaseRepo,
+            changelog: preparedChangeLog,
+            releaseUrl: releaseUrl,
+            releaseName: releaseName
+        }
+    });
 
     return {
         releaseName: releaseName,
@@ -133,6 +144,7 @@ async function prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastRel
         previousTag: lastReleaseTag,
         targetCommitish: targetCommitish,
         releaseUrl: releaseUrl,
+        notificationProviders: notificationResult.providers,
         draft: releaseContext.draft === true,
         publishRequested: releaseContext.publish === true
     };
@@ -177,7 +189,7 @@ function resolveLastReleaseTag(lastRelease, fallbackRef) {
     return lastRelease?.tag_name || fallbackRef;
 }
 
-function buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRelease, headBranch, releaseTarget, releaseContext) {
+function buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRelease, releaseTarget, releaseContext) {
     const lastReleaseTag = resolveLastReleaseTag(lastRelease, releaseTarget);
     const releaseTag = helper.releaseTagName(releaseContext.tag);
     const releaseName = helper.releaseName(releaseContext.releaseName);

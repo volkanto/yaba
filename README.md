@@ -84,6 +84,19 @@ given Slack channel. You can find detailed information in the [Command Line Usag
 yaba release create -p
 ```
 
+Notification providers are now resolved through config. Slack remains provider #1:
+
+```json
+{
+  "notifications": {
+    "providers": ["slack"],
+    "slack": {
+      "enabled": true
+    }
+  }
+}
+```
+
 ## Command Line Usage
 
 Run `yaba` with `--help` options:

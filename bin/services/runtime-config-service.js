@@ -28,6 +28,7 @@ export function buildDefaultConfigTemplate() {
             firstReleaseMaxCommits: 50
         },
         notifications: {
+            providers: ["slack"],
             slack: {
                 enabled: false
             }
@@ -84,6 +85,7 @@ export function resolveReleaseContext(options, runtimeConfig) {
             runtimeConfig?.notifications?.slack?.enabled,
             false
         ),
+        notificationProviders: resolveNotificationProviders(runtimeConfig),
         interactive: resolveBoolean(
             options.interactive,
             runtimeConfig?.release?.interactive,
@@ -91,6 +93,21 @@ export function resolveReleaseContext(options, runtimeConfig) {
         ),
         body: options.body
     };
+}
+
+function resolveNotificationProviders(runtimeConfig) {
+    const configuredProviders = runtimeConfig?.notifications?.providers;
+    if (!Array.isArray(configuredProviders)) {
+        return ["slack"];
+    }
+
+    const normalized = configuredProviders
+        .map(item => (typeof item === "string" ? item.trim().toLowerCase() : ""))
+        .filter(Boolean);
+
+    return normalized.length > 0
+        ? [...new Set(normalized)]
+        : ["slack"];
 }
 
 export function resolveReleaseRepo(options, runtimeConfig) {

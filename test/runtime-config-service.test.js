@@ -8,6 +8,7 @@ import {
 test("buildDefaultConfigTemplate includes nullable release target", () => {
     const template = buildDefaultConfigTemplate();
     assert.equal(template.release.target, null);
+    assert.deepEqual(template.notifications.providers, ["slack"]);
 });
 
 test("resolveReleaseContext applies target precedence from options over config", () => {
@@ -28,4 +29,24 @@ test("resolveReleaseContext applies target precedence from options over config",
     );
 
     assert.equal(resolved.target, "abc123");
+});
+
+test("resolveReleaseContext normalizes notification providers from config", () => {
+    const runtimeConfig = buildDefaultConfigTemplate();
+    runtimeConfig.notifications.providers = ["Slack", "slack", "  "];
+
+    const resolved = resolveReleaseContext(
+        {
+            target: undefined,
+            releaseName: undefined,
+            tag: undefined,
+            draft: undefined,
+            publish: undefined,
+            interactive: undefined,
+            body: undefined
+        },
+        runtimeConfig
+    );
+
+    assert.deepEqual(resolved.notificationProviders, ["slack"]);
 });

@@ -323,6 +323,18 @@ You have to install globally in order to run your `yaba` command
 npm install -g .
 ```
 
+Run unit tests:
+
+```shell
+npm run test:unit
+```
+
+Run integration tests:
+
+```shell
+npm run test:integration
+```
+
 ## Issues
 
 You can create an issue if you find any problem or feel free to create a PR with a possible fix or any other feature.

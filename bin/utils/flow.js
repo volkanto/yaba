@@ -170,11 +170,12 @@ export async function prepareChangelog(owner, repo, base, head) {
  * @returns {Promise<*>}
  */
 export async function listCommits(owner, repo, head) {
-    spinner.start(`Fetching commits from ${head} branch...`);
+    spinner.start(`Fetching commits from ${head} reference...`);
     try {
         const { data: commits } = await octokit.request('GET /repos/{owner}/{repo}/commits', {
             owner: owner,
-            repo: repo
+            repo: repo,
+            sha: head
         });
         spinner.succeed('Commits have been fetched...');
 
@@ -183,8 +184,8 @@ export async function listCommits(owner, repo, head) {
             return item.commit.message;
         });
     } catch (error) {
-        spinner.fail(`Could not fetch commits from ${head} branch.`);
-        throw mapGithubError(error, `Could not fetch commits from ${head} branch.`);
+        spinner.fail(`Could not fetch commits from ${head} reference.`);
+        throw mapGithubError(error, `Could not fetch commits from ${head} reference.`);
     }
 }
 
@@ -199,19 +200,24 @@ export async function listCommits(owner, repo, head) {
  * @param tag_name the tag name
  * @returns {Promise<void>}
  */
-export async function createRelease(owner, repo, draft, name, body, tag_name) {
+export async function createRelease(owner, repo, draft, name, body, tag_name, targetCommitish) {
 
     try {
         spinner.start('Preparing the release...');
-
-        const { data: newRelease } = await octokit.request('POST /repos/{owner}/{repo}/releases', {
+        const createReleasePayload = {
             owner: owner,
             repo: repo,
             draft: draft,
             name: helper.releaseName(name),
             body: body,
             tag_name: helper.releaseTagName(tag_name)
-        });
+        };
+
+        if (typeof targetCommitish === 'string' && targetCommitish.trim().length > 0) {
+            createReleasePayload.target_commitish = targetCommitish.trim();
+        }
+
+        const { data: newRelease } = await octokit.request('POST /repos/{owner}/{repo}/releases', createReleasePayload);
 
         // if the user terminal supports hyperlink, this will be a clickable link, otherwise prints plain text.
         const releaseUrl = prepareReleaseUrl(newRelease.html_url);
@@ -228,6 +234,30 @@ export async function createRelease(owner, repo, draft, name, body, tag_name) {
         });
         spinner.fail(`${message} while preparing the release! ${errorMessage}`);
         throw mapGithubError(error, `${message} while preparing the release.`);
+    }
+}
+
+/**
+ * validates and resolves a target commit-ish (branch, tag, or SHA) to a commit SHA.
+ *
+ * @param owner repository owner
+ * @param repo repository name
+ * @param ref target commit-ish
+ * @returns {Promise<string>}
+ */
+export async function resolveTargetCommitish(owner, repo, ref) {
+    spinner.start(`Validating target reference '${ref}'...`);
+    try {
+        const { data: commit } = await octokit.request('GET /repos/{owner}/{repo}/commits/{ref}', {
+            owner: owner,
+            repo: repo,
+            ref: ref
+        });
+        spinner.succeed(`Target reference resolved to commit ${kleur.blue().bold().underline(commit.sha.substring(0, 12))}`);
+        return commit.sha;
+    } catch (error) {
+        spinner.fail(`Could not resolve target reference '${ref}'.`);
+        throw mapGithubError(error, `Could not resolve target reference '${ref}'.`);
     }
 }
 

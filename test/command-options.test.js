@@ -33,11 +33,12 @@ test('defaults to release.create and marks implicit invocation as deprecated', (
 });
 
 test('parses release preview command with json output option', () => {
-    const { options, supported } = parseOptions(['release', 'preview', '--format', 'json']);
+    const { options, supported } = parseOptions(['release', 'preview', '--format', 'json', '--target', 'abc123']);
     assert.equal(supported, true);
     assert.equal(options.commandName, 'release.preview');
     assert.equal(options.releaseCommand, 'preview');
     assert.equal(options.outputFormat, 'json');
+    assert.equal(options.target, 'abc123');
 });
 
 test('maps --yes to non-interactive mode and emits deprecation warning', () => {

@@ -21,12 +21,13 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
     const repoOwner = await resolveOwner(options, runtimeConfig);
     const releaseContext = resolveReleaseContext(options, runtimeConfig);
 
-    const headBranch = await checkHeadBranch(repoOwner, releaseRepo);
+    const headBranch = releaseContext.target ? null : await checkHeadBranch(repoOwner, releaseRepo);
+    const releaseTarget = await resolveReleaseTarget(repoOwner, releaseRepo, releaseContext, headBranch);
     const lastRelease = await flow.fetchLastRelease(repoOwner, releaseRepo);
-    const changeLog = await flow.prepareChangeLog(repoOwner, releaseRepo, headBranch, lastRelease);
+    const changeLog = await flow.prepareChangeLog(repoOwner, releaseRepo, releaseTarget, lastRelease);
 
     const preparedChangeLog = helper.prepareChangeLog(releaseContext.body, changeLog);
-    const releasePreview = buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRelease, headBranch, releaseContext);
+    const releasePreview = buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRelease, headBranch, releaseTarget, releaseContext);
 
     if (options.releaseCommand === "preview") {
         if (isJsonOutput) {
@@ -40,6 +41,7 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
                 previousTag: releasePreview.lastReleaseTag,
                 previousTagSource: releasePreview.releaseTagSource,
                 draft: releasePreview.draft,
+                targetCommitish: releasePreview.targetCommitish,
                 changelog: releasePreview.changelogBody
             });
         } else {
@@ -72,8 +74,8 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
     }
 
     if (canCreateRelease(changeLog, options)) {
-        const lastReleaseTag = resolveLastReleaseTag(lastRelease, headBranch);
-        const releaseResult = await prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseContext);
+        const lastReleaseTag = resolveLastReleaseTag(lastRelease, releaseTarget);
+        const releaseResult = await prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseContext, releaseTarget);
 
         if (isJsonOutput) {
             printJson({
@@ -85,6 +87,7 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
                 newTag: releaseResult.releaseTag,
                 previousTag: releaseResult.previousTag,
                 draft: releaseResult.draft,
+                targetCommitish: releaseResult.targetCommitish,
                 releaseUrl: releaseResult.releaseUrl,
                 notified: releaseResult.publishRequested
             });
@@ -102,7 +105,7 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
     return exitCodes.SUCCESS;
 }
 
-async function prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseContext) {
+async function prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseContext, targetCommitish) {
     const hasReleaseCreatePermission = await helper.releaseCreatePermit(releaseContext.interactive);
 
     if (!hasReleaseCreatePermission) {
@@ -118,7 +121,8 @@ async function prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastRel
         releaseContext.draft,
         releaseName,
         changeLogDetails,
-        releaseContext.tag
+        releaseContext.tag,
+        targetCommitish
     );
 
     await flow.publishToSlack(releaseContext.publish, releaseRepo, preparedChangeLog, releaseUrl, releaseName);
@@ -127,10 +131,19 @@ async function prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastRel
         releaseName: releaseName,
         releaseTag: releaseTag,
         previousTag: lastReleaseTag,
+        targetCommitish: targetCommitish,
         releaseUrl: releaseUrl,
         draft: releaseContext.draft === true,
         publishRequested: releaseContext.publish === true
     };
+}
+
+async function resolveReleaseTarget(repoOwner, releaseRepo, releaseContext, fallbackHeadBranch) {
+    if (isNonEmptyString(releaseContext.target)) {
+        return await flow.resolveTargetCommitish(repoOwner, releaseRepo, releaseContext.target.trim());
+    }
+
+    return fallbackHeadBranch;
 }
 
 async function checkHeadBranch(repoOwner, releaseRepo) {
@@ -160,16 +173,20 @@ function canShowChangelog(changeLog, options) {
     return changeLog.length !== 0 && options.changelog;
 }
 
-function resolveLastReleaseTag(lastRelease, headBranch) {
-    return lastRelease?.tag_name || headBranch;
+function resolveLastReleaseTag(lastRelease, fallbackRef) {
+    return lastRelease?.tag_name || fallbackRef;
 }
 
-function buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRelease, headBranch, releaseContext) {
-    const lastReleaseTag = resolveLastReleaseTag(lastRelease, headBranch);
+function buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRelease, headBranch, releaseTarget, releaseContext) {
+    const lastReleaseTag = resolveLastReleaseTag(lastRelease, releaseTarget);
     const releaseTag = helper.releaseTagName(releaseContext.tag);
     const releaseName = helper.releaseName(releaseContext.releaseName);
     const changelogBody = templateUtils.generateChangelog(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseTag);
-    const releaseTagSource = lastRelease?.tag_name ? "latest release tag" : "head branch (fallback)";
+    const releaseTagSource = lastRelease?.tag_name
+        ? "latest release tag"
+        : isNonEmptyString(releaseContext.target)
+            ? "target reference (--target fallback)"
+            : "head branch (fallback)";
 
     return {
         owner: repoOwner,
@@ -178,6 +195,7 @@ function buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRele
         releaseTag: releaseTag,
         lastReleaseTag: lastReleaseTag,
         releaseTagSource: releaseTagSource,
+        targetCommitish: releaseTarget,
         draft: releaseContext.draft === true,
         changelogBody: changelogBody
     };

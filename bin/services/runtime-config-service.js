@@ -22,6 +22,7 @@ export function buildDefaultConfigTemplate() {
             repo: null,
             tagPattern: "prod_global_{yyyyMMdd}.1",
             namePattern: "Global release {yyyy-MM-dd}",
+            target: null,
             draft: false,
             interactive: true,
             firstReleaseMaxCommits: 50
@@ -68,6 +69,10 @@ export function resolveReleaseContext(options, runtimeConfig) {
         tag: firstDefined(
             options.tag,
             renderConfigPattern(runtimeConfig?.release?.tagPattern)
+        ),
+        target: firstDefined(
+            options.target,
+            runtimeConfig?.release?.target
         ),
         draft: resolveBoolean(
             options.draft,

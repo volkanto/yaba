@@ -15,6 +15,9 @@ export function validateRuntimeConfigSchema(runtimeConfig, supportedNotification
 
     validateBoolean(runtimeConfig?.release?.draft, "release.draft", issues);
     validateBoolean(runtimeConfig?.release?.interactive, "release.interactive", issues);
+    validateBoolean(runtimeConfig?.release?.allowEmpty, "release.allowEmpty", issues);
+    validateBoolean(runtimeConfig?.release?.failOnEmpty, "release.failOnEmpty", issues);
+    validateOptionalPositiveInteger(runtimeConfig?.release?.maxCommits, "release.maxCommits", issues);
     validatePositiveInteger(
         runtimeConfig?.release?.firstReleaseMaxCommits,
         "release.firstReleaseMaxCommits",
@@ -55,6 +58,16 @@ function validateBoolean(value, path, issues) {
 function validatePositiveInteger(value, path, issues) {
     if (!Number.isInteger(value) || value <= 0) {
         issues.push(`${path} must be a positive integer.`);
+    }
+}
+
+function validateOptionalPositiveInteger(value, path, issues) {
+    if (value === undefined || value === null || value === "") {
+        return;
+    }
+
+    if (!Number.isInteger(value) || value <= 0) {
+        issues.push(`${path} must be a positive integer when provided.`);
     }
 }
 

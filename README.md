@@ -111,6 +111,11 @@ Options:
   -t, --tag                   The name of the tag.                       [string]
       --target                Target commit-ish (branch, tag, or SHA) to generate
                               and create the release from.               [string]
+      --allow-empty           Allow creating a release when no commits are found
+                              in changelog comparison.                  [boolean]
+      --fail-on-empty         Fail when no commits are found in changelog
+                              comparison.                               [boolean]
+      --max-commits           Fail when commit count exceeds this limit. [number]
   -n, --name, --release-name  The name of the release.                   [string]
   -b, --body          Text describing the contents of the tag. If not provided,
                       the default changelog will be generated with the usage of
@@ -156,6 +161,18 @@ Create release from a specific commit/tag/branch target:
 
 ```shell
 yaba release create --repo my-repo --target 1a2b3c4d --no-prompt
+```
+
+Fail explicitly when no changes are found:
+
+```shell
+yaba release create --repo my-repo --fail-on-empty --no-prompt
+```
+
+Allow empty release intentionally:
+
+```shell
+yaba release create --repo my-repo --allow-empty --no-prompt
 ```
 
 Preview release details without side effects:

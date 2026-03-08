@@ -8,6 +8,9 @@ import {
 test("buildDefaultConfigTemplate includes nullable release target", () => {
     const template = buildDefaultConfigTemplate();
     assert.equal(template.release.target, null);
+    assert.equal(template.release.allowEmpty, false);
+    assert.equal(template.release.failOnEmpty, false);
+    assert.equal(template.release.maxCommits, null);
     assert.deepEqual(template.notifications.providers, ["slack"]);
 });
 
@@ -49,4 +52,54 @@ test("resolveReleaseContext normalizes notification providers from config", () =
     );
 
     assert.deepEqual(resolved.notificationProviders, ["slack"]);
+});
+
+test("resolveReleaseContext applies release safety options from flags", () => {
+    const runtimeConfig = buildDefaultConfigTemplate();
+    runtimeConfig.release.allowEmpty = false;
+    runtimeConfig.release.failOnEmpty = false;
+    runtimeConfig.release.maxCommits = 40;
+
+    const resolved = resolveReleaseContext(
+        {
+            target: undefined,
+            releaseName: undefined,
+            tag: undefined,
+            draft: undefined,
+            publish: undefined,
+            interactive: undefined,
+            body: undefined,
+            allowEmpty: true,
+            failOnEmpty: false,
+            maxCommits: 25
+        },
+        runtimeConfig
+    );
+
+    assert.equal(resolved.allowEmpty, true);
+    assert.equal(resolved.failOnEmpty, false);
+    assert.equal(resolved.maxCommits, 25);
+});
+
+test("resolveReleaseContext marks invalid maxCommits as NaN", () => {
+    const runtimeConfig = buildDefaultConfigTemplate();
+    runtimeConfig.release.maxCommits = "bad";
+
+    const resolved = resolveReleaseContext(
+        {
+            target: undefined,
+            releaseName: undefined,
+            tag: undefined,
+            draft: undefined,
+            publish: undefined,
+            interactive: undefined,
+            body: undefined,
+            allowEmpty: undefined,
+            failOnEmpty: undefined,
+            maxCommits: undefined
+        },
+        runtimeConfig
+    );
+
+    assert.equal(Number.isNaN(resolved.maxCommits), true);
 });

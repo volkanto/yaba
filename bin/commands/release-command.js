@@ -7,6 +7,11 @@ import { isNonEmptyString } from "../utils/runtime-config.js";
 import { publishReleaseNotifications } from "../notifications/publisher.js";
 import { printChangelog, printJson, printReleasePreview } from "../services/command-output.js";
 import {
+    enforceReleaseSafety,
+    shouldCreateRelease,
+    shouldShowChangelog
+} from "../services/release-safety-service.js";
+import {
     resolveOwner,
     resolveReleaseContext,
     resolveReleaseRepo
@@ -26,6 +31,7 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
     const releaseTarget = await resolveReleaseTarget(repoOwner, releaseRepo, releaseContext, headBranch);
     const lastRelease = await flow.fetchLastRelease(repoOwner, releaseRepo);
     const changeLog = await flow.prepareChangeLog(repoOwner, releaseRepo, releaseTarget, lastRelease);
+    enforceReleaseSafety(changeLog.length, releaseContext);
 
     const preparedChangeLog = helper.prepareChangeLog(releaseContext.body, changeLog);
     const releasePreview = buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRelease, releaseTarget, releaseContext);
@@ -51,7 +57,7 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
         return exitCodes.SUCCESS;
     }
 
-    if (canShowChangelog(changeLog, options)) {
+    if (shouldShowChangelog(changeLog.length, options.changelog === true, releaseContext.allowEmpty === true)) {
         if (isJsonOutput) {
             printJson({
                 command: "release.changelog",
@@ -74,7 +80,7 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
         });
     }
 
-    if (canCreateRelease(changeLog, options)) {
+    if (shouldCreateRelease(changeLog.length, options.changelog === true, releaseContext.allowEmpty === true)) {
         const lastReleaseTag = resolveLastReleaseTag(lastRelease, releaseTarget);
         const releaseResult = await prepareRelease(preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseContext, releaseTarget);
 
@@ -91,6 +97,9 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
                 targetCommitish: releaseResult.targetCommitish,
                 releaseUrl: releaseResult.releaseUrl,
                 notificationProviders: releaseResult.notificationProviders,
+                allowEmpty: releaseContext.allowEmpty === true,
+                failOnEmpty: releaseContext.failOnEmpty === true,
+                maxCommits: releaseContext.maxCommits ?? null,
                 notified: releaseResult.publishRequested
             });
         }
@@ -100,7 +109,7 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
             status: "noop",
             owner: repoOwner,
             repo: releaseRepo,
-            reason: "No changes found to release."
+            reason: "No changes found to release. Use '--allow-empty' to proceed or '--fail-on-empty' to fail explicitly."
         });
     }
 
@@ -175,14 +184,6 @@ function checkDirectory(options, releaseRepo, runtimeConfig) {
     if (!isNonEmptyString(releaseRepo) || releaseRepo === "not a git repo") {
         throw createError("Repository name could not be resolved. Use --repo or set release.repo in config.", exitCodes.VALIDATION);
     }
-}
-
-function canCreateRelease(changeLog, options) {
-    return changeLog.length !== 0 && !options.changelog;
-}
-
-function canShowChangelog(changeLog, options) {
-    return changeLog.length !== 0 && options.changelog;
 }
 
 function resolveLastReleaseTag(lastRelease, fallbackRef) {

@@ -23,6 +23,9 @@ export function buildDefaultConfigTemplate() {
             tagPattern: "prod_global_{yyyyMMdd}.1",
             namePattern: "Global release {yyyy-MM-dd}",
             target: null,
+            allowEmpty: false,
+            failOnEmpty: false,
+            maxCommits: null,
             draft: false,
             interactive: true,
             firstReleaseMaxCommits: 50
@@ -75,6 +78,20 @@ export function resolveReleaseContext(options, runtimeConfig) {
             options.target,
             runtimeConfig?.release?.target
         ),
+        allowEmpty: resolveBoolean(
+            options.allowEmpty,
+            runtimeConfig?.release?.allowEmpty,
+            false
+        ),
+        failOnEmpty: resolveBoolean(
+            options.failOnEmpty,
+            runtimeConfig?.release?.failOnEmpty,
+            false
+        ),
+        maxCommits: resolveMaxCommits(
+            options.maxCommits,
+            runtimeConfig?.release?.maxCommits
+        ),
         draft: resolveBoolean(
             options.draft,
             runtimeConfig?.release?.draft,
@@ -108,6 +125,20 @@ function resolveNotificationProviders(runtimeConfig) {
     return normalized.length > 0
         ? [...new Set(normalized)]
         : ["slack"];
+}
+
+function resolveMaxCommits(optionValue, configValue) {
+    const candidate = firstDefined(optionValue, configValue);
+    if (candidate === undefined || candidate === null || candidate === "") {
+        return undefined;
+    }
+
+    const normalized = Number(candidate);
+    if (!Number.isFinite(normalized) || !Number.isInteger(normalized) || normalized <= 0) {
+        return Number.NaN;
+    }
+
+    return normalized;
 }
 
 export function resolveReleaseRepo(options, runtimeConfig) {

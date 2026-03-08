@@ -210,7 +210,7 @@ export async function createRelease(owner, repo, draft, name, body, tag_name, ta
             draft: draft,
             name: helper.releaseName(name),
             body: body,
-            tag_name: helper.releaseTagName(tag_name)
+            tag_name: tag_name
         };
 
         if (typeof targetCommitish === 'string' && targetCommitish.trim().length > 0) {
@@ -226,15 +226,79 @@ export async function createRelease(owner, repo, draft, name, body, tag_name, ta
         return newRelease.html_url;
 
     } catch (error) {
-        let errorMessage = "\n";
-        const errors = error?.response?.data?.errors || [];
-        const message = error?.response?.data?.message || 'Could not create release';
-        errors.forEach(element => {
-            errorMessage += `\t* field: '${element.field}' - code: '${element.code}'`;
-        });
-        spinner.fail(`${message} while preparing the release! ${errorMessage}`);
-        throw mapGithubError(error, `${message} while preparing the release.`);
+        const fallbackTagName = helper.promoteTagPrecisionToSeconds(createReleasePayload.tag_name);
+        if (isTagNameConflictError(error) && fallbackTagName && fallbackTagName !== createReleasePayload.tag_name) {
+            try {
+                spinner.warn(`Tag '${createReleasePayload.tag_name}' already exists. Retrying with '${fallbackTagName}'.`);
+                spinner.start('Retrying release preparation with second-precision tag...');
+
+                const retryPayload = {
+                    owner: owner,
+                    repo: repo,
+                    draft: draft,
+                    name: helper.releaseName(name),
+                    body: body,
+                    tag_name: fallbackTagName
+                };
+
+                if (typeof targetCommitish === 'string' && targetCommitish.trim().length > 0) {
+                    retryPayload.target_commitish = targetCommitish.trim();
+                }
+
+                const { data: newRelease } = await octokit.request('POST /repos/{owner}/{repo}/releases', retryPayload);
+                const releaseUrl = prepareReleaseUrl(newRelease.html_url);
+                spinner.succeed(`Release has been prepared on Github. ${releaseUrl}`);
+                return newRelease.html_url;
+            } catch (retryError) {
+                throw buildCreateReleaseError(retryError);
+            }
+        }
+
+        throw buildCreateReleaseError(error);
     }
+}
+
+/**
+ * checks whether the given tag already exists in the repository.
+ *
+ * @param owner the repository owner
+ * @param repo the repository name
+ * @param tagName the tag name to check
+ * @returns {Promise<boolean>}
+ */
+export async function tagExists(owner, repo, tagName) {
+    try {
+        const { data: refs } = await octokit.request('GET /repos/{owner}/{repo}/git/matching-refs/{ref}', {
+            owner: owner,
+            repo: repo,
+            ref: `tags/${tagName}`
+        });
+
+        return Array.isArray(refs) && refs.some(item => item?.ref === `refs/tags/${tagName}`);
+    } catch (error) {
+        const status = error?.status || error?.response?.status;
+        if (status === 404) {
+            return false;
+        }
+
+        throw mapGithubError(error, `Could not verify whether tag '${tagName}' exists.`);
+    }
+}
+
+function isTagNameConflictError(error) {
+    const errors = error?.response?.data?.errors || [];
+    return errors.some(item => item?.field === 'tag_name' && item?.code === 'already_exists');
+}
+
+function buildCreateReleaseError(error) {
+    let errorMessage = "\n";
+    const errors = error?.response?.data?.errors || [];
+    const message = error?.response?.data?.message || 'Could not create release';
+    errors.forEach(element => {
+        errorMessage += `\t* field: '${element.field}' - code: '${element.code}'`;
+    });
+    spinner.fail(`${message} while preparing the release! ${errorMessage}`);
+    return mapGithubError(error, `${message} while preparing the release.`);
 }
 
 /**

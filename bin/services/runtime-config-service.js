@@ -20,7 +20,10 @@ export function buildDefaultConfigTemplate() {
         },
         release: {
             repo: null,
-            tagPattern: "prod_global_{yyyyMMdd}.1",
+            tagPattern: "prod_global_{yyyyMMdd}.{HHmm}",
+            tagStrategy: "pattern",
+            tagOnConflict: "increment",
+            tagMaxAttempts: 20,
             namePattern: "Global release {yyyy-MM-dd}",
             target: null,
             allowEmpty: false,
@@ -70,9 +73,21 @@ export function resolveReleaseContext(options, runtimeConfig) {
             options.releaseName,
             renderConfigPattern(runtimeConfig?.release?.namePattern)
         ),
-        tag: firstDefined(
-            options.tag,
-            renderConfigPattern(runtimeConfig?.release?.tagPattern)
+        tag: options.tag,
+        tagPattern: runtimeConfig?.release?.tagPattern,
+        tagStrategy: firstDefined(
+            options.tagStrategy,
+            runtimeConfig?.release?.tagStrategy,
+            "pattern"
+        ),
+        tagOnConflict: firstDefined(
+            options.tagOnConflict,
+            runtimeConfig?.release?.tagOnConflict,
+            "increment"
+        ),
+        tagMaxAttempts: resolveTagMaxAttempts(
+            options.tagMaxAttempts,
+            runtimeConfig?.release?.tagMaxAttempts
         ),
         target: firstDefined(
             options.target,
@@ -128,6 +143,20 @@ function resolveNotificationProviders(runtimeConfig) {
 }
 
 function resolveMaxCommits(optionValue, configValue) {
+    const candidate = firstDefined(optionValue, configValue);
+    if (candidate === undefined || candidate === null || candidate === "") {
+        return undefined;
+    }
+
+    const normalized = Number(candidate);
+    if (!Number.isFinite(normalized) || !Number.isInteger(normalized) || normalized <= 0) {
+        return Number.NaN;
+    }
+
+    return normalized;
+}
+
+function resolveTagMaxAttempts(optionValue, configValue) {
     const candidate = firstDefined(optionValue, configValue);
     if (candidate === undefined || candidate === null || candidate === "") {
         return undefined;

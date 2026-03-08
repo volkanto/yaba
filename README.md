@@ -120,6 +120,15 @@ Options:
   -o, --owner                 The repository owner.                      [string]
   -r, --repo                  The repository name.                       [string]
   -t, --tag                   The name of the tag.                       [string]
+      --tag-strategy          Tag generation strategy.
+                              [choices: "pattern", "semver", "sha"]
+                              [default: from config (fallback: pattern)]
+      --tag-on-conflict       How to handle already existing tags.
+                              [choices: "increment", "fail"]
+                              [default: from config (fallback: increment)]
+      --tag-max-attempts      Maximum attempts while resolving a unique tag with increment policy.
+                                                                       [number]
+                              [default: from config (fallback: 20)]
       --target                Target commit-ish (branch, tag, or SHA) to generate
                               and create the release from.               [string]
       --allow-empty           Allow creating a release when no commits are found
@@ -202,6 +211,18 @@ Preview release details from a specific target reference:
 
 ```shell
 yaba release preview --repo my-repo --target release/2.x
+```
+
+Create release using semver tag strategy (`v<package.json version>`):
+
+```shell
+yaba release create --repo my-repo --tag-strategy semver --no-prompt
+```
+
+Create release using sha-based tag strategy:
+
+```shell
+yaba release create --repo my-repo --tag-strategy sha --target 1a2b3c4d5e6f --no-prompt
 ```
 
 Run setup diagnostics:

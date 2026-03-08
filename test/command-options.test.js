@@ -64,6 +64,24 @@ test('parses release safety flags', () => {
     assert.equal(options.maxCommits, 25);
 });
 
+test("parses tag strategy and conflict policy flags", () => {
+    const { options, supported } = parseOptions([
+        "release",
+        "create",
+        "--tag-strategy",
+        "sha",
+        "--tag-on-conflict",
+        "fail",
+        "--tag-max-attempts",
+        "7"
+    ]);
+
+    assert.equal(supported, true);
+    assert.equal(options.tagStrategy, "sha");
+    assert.equal(options.tagOnConflict, "fail");
+    assert.equal(options.tagMaxAttempts, 7);
+});
+
 test('supports config init command', () => {
     const { options, supported } = parseOptions(['config', 'init']);
     assert.equal(supported, true);

@@ -21,6 +21,20 @@ const commands = yargs(rawArguments)
         describe: "Target commit-ish (branch, tag, or SHA) to generate and create the release from.",
         type: "string"
     })
+    .option("allow-empty", {
+        describe: "Allow creating a release when no commits are found in changelog comparison.",
+        type: "boolean",
+        default: false
+    })
+    .option("fail-on-empty", {
+        describe: "Fail with non-zero exit code when no commits are found in changelog comparison.",
+        type: "boolean",
+        default: false
+    })
+    .option("max-commits", {
+        describe: "Fail when commit count exceeds this limit.",
+        type: "number"
+    })
     .option("n", {
         alias: ["name", "release-name"],
         describe: "The name of the release.",
@@ -98,6 +112,7 @@ function normalizeOptions(parsed) {
     const publishProvided = wasFlagProvided("--publish") || wasFlagProvided("-p");
     const draftProvided = wasFlagProvided("--draft") || wasFlagProvided("-d");
     const formatProvided = wasFlagProvided("--format");
+    const maxCommitsProvided = wasFlagProvided("--max-commits");
     const commandName = resolveCommand(parsed);
 
     normalized.releaseName = parsed.name ?? parsed["release-name"];
@@ -119,6 +134,9 @@ function normalizeOptions(parsed) {
     normalized.outputFormat = formatProvided ? parsed.format : undefined;
     normalized.configPath = parsed.config;
     normalized.target = parsed.target;
+    normalized.allowEmpty = parsed["allow-empty"] === true;
+    normalized.failOnEmpty = parsed["fail-on-empty"] === true;
+    normalized.maxCommits = maxCommitsProvided ? parsed["max-commits"] : undefined;
     normalized.deprecationWarnings = collectDeprecationWarnings(parsed, commandName, yesProvided);
 
     return normalized;

@@ -48,6 +48,22 @@ test('maps --yes to non-interactive mode and emits deprecation warning', () => {
     assert.ok(options.deprecationWarnings.some(item => item.includes("--yes")));
 });
 
+test('parses release safety flags', () => {
+    const { options, supported } = parseOptions([
+        'release',
+        'create',
+        '--allow-empty',
+        '--fail-on-empty',
+        '--max-commits',
+        '25'
+    ]);
+
+    assert.equal(supported, true);
+    assert.equal(options.allowEmpty, true);
+    assert.equal(options.failOnEmpty, true);
+    assert.equal(options.maxCommits, 25);
+});
+
 test('supports config init command', () => {
     const { options, supported } = parseOptions(['config', 'init']);
     assert.equal(supported, true);

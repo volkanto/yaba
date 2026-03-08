@@ -2,6 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { prepareSlackMessage } from "../bin/utils/helper.js";
 
+function escapeRegExp(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 test("prepareSlackMessage injects newsletter content and compare link", () => {
     const payload = prepareSlackMessage(
         "yaba",
@@ -33,5 +37,5 @@ test("prepareSlackMessage falls back compare link to release URL when compare UR
     const linkContext = payload.blocks.find(item => item.type === "context");
     assert.ok(linkContext);
     assert.match(linkContext.elements[0].text, /Release Notes/);
-    assert.match(linkContext.elements[0].text, new RegExp(releaseUrl.replace(/\./g, "\\.")));
+    assert.match(linkContext.elements[0].text, new RegExp(escapeRegExp(releaseUrl)));
 });

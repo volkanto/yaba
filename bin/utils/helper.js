@@ -164,12 +164,13 @@ export async function releaseCreatePermit(interactive) {
 
 /**
  * @param repo the repository to prepare Slack message for
- * @param message the changelog to send to Slack channel(s)
+ * @param message the newsletter body to send to Slack channel(s)
  * @param releaseUrl the release tag url on Github
  * @param releaseName the title of the release
+ * @param compareUrl the compare URL between previous and current release refs
  * @returns {object} the formatted JSON payload to send to Slack
  */
-export function prepareSlackMessage(repo, message, releaseUrl, releaseName) {
+export function prepareSlackMessage(repo, message, releaseUrl, releaseName, compareUrl) {
 
     const slackMessageTemplatePath = path.join(__dirname, appConstants.SLACK_POST_TEMPLATE);
     const templateFile = fs.readFileSync(slackMessageTemplatePath, 'utf8');
@@ -177,9 +178,10 @@ export function prepareSlackMessage(repo, message, releaseUrl, releaseName) {
 
     return applyTemplateValues(templateJson, {
         repo: repo,
-        changelog: message.trim(),
+        newsletterBody: message.trim(),
         releaseUrl: releaseUrl,
-        releaseName: releaseName
+        releaseName: releaseName,
+        compareUrl: compareUrl || releaseUrl
     });
 }
 

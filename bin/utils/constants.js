@@ -4,7 +4,8 @@ const appConstants = Object.freeze({
     TAG_DATE_FORMAT: 'yyyyMMdd',
     SLACK_POST_TEMPLATE: '../assets/slack-post-template.json',
     UPDATE_MESSAGE_TEMPLATE: '../assets/yaba-update-message-template.txt',
-    CHANGELOG_TEMPLATE: '../assets/changelog-template.md'
+    CHANGELOG_TEMPLATE: '../assets/changelog-template.md',
+    GITHUB_RELEASE_TEMPLATE: '../assets/github-release-template.md'
 });
 
 const defaultBoxOptions = {

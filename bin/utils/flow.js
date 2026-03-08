@@ -13,6 +13,9 @@ const octokit = new Octokit({
 });
 const spinner = ora();
 let outputFormat = 'human';
+const DEFAULT_SLACK_PUBLISH_MAX_ATTEMPTS = 3;
+const DEFAULT_SLACK_PUBLISH_BASE_DELAY_MS = 500;
+const RETRYABLE_SLACK_NETWORK_CODES = ['ENOTFOUND', 'ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN'];
 
 export function setOutputFormat(format = 'human') {
     outputFormat = format;
@@ -448,7 +451,7 @@ export async function publishToSlack(publish, repo, changelog, releaseUrl, relea
         const message = helper.prepareSlackMessage(repo, changelog, releaseUrl, releaseName, compareUrl);
         try {
             for (const channelUrl of slackHookUrlList) {
-                await postToSlack(channelUrl, message);
+                await publishToSlackWithRetry(channelUrl, message);
             }
             spinner.succeed('Changelog published to Slack.');
         } catch (error) {
@@ -468,6 +471,69 @@ export async function publishToSlack(publish, repo, changelog, releaseUrl, relea
  */
 async function postToSlack(channelUrl, message) {
     await axios.post(channelUrl, message);
+}
+
+/**
+ * sends a Slack message with bounded retries and exponential backoff.
+ *
+ * @param channelUrl Slack webhook URL
+ * @param message Slack payload
+ * @param options retry settings
+ * @returns {Promise<void>}
+ */
+export async function publishToSlackWithRetry(channelUrl, message, options = {}) {
+    const maxAttempts = resolveSlackMaxAttempts(options.maxAttempts);
+    const baseDelayMs = resolveSlackBaseDelay(options.baseDelayMs);
+    const postFn = typeof options.postFn === 'function' ? options.postFn : postToSlack;
+    const sleepFn = typeof options.sleepFn === 'function' ? options.sleepFn : wait;
+
+    let lastError = null;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            await postFn(channelUrl, message);
+            return;
+        } catch (error) {
+            lastError = error;
+            const canRetry = attempt < maxAttempts && isRetriableSlackPublishError(error);
+            if (!canRetry) {
+                throw error;
+            }
+
+            const delayMs = baseDelayMs * Math.pow(2, attempt - 1);
+            await sleepFn(delayMs);
+        }
+    }
+
+    throw lastError;
+}
+
+function isRetriableSlackPublishError(error) {
+    const status = error?.status || error?.response?.status;
+    if (RETRYABLE_SLACK_NETWORK_CODES.includes(error?.code)) {
+        return true;
+    }
+
+    return status === 429 || status === 408 || (typeof status === 'number' && status >= 500);
+}
+
+function resolveSlackMaxAttempts(value) {
+    if (!Number.isInteger(value) || value <= 0) {
+        return DEFAULT_SLACK_PUBLISH_MAX_ATTEMPTS;
+    }
+
+    return value;
+}
+
+function resolveSlackBaseDelay(value) {
+    if (!Number.isInteger(value) || value <= 0) {
+        return DEFAULT_SLACK_PUBLISH_BASE_DELAY_MS;
+    }
+
+    return value;
+}
+
+function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**

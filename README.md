@@ -89,6 +89,8 @@ given Slack channel. You can find detailed information in the [Command Line Usag
 yaba release create -p
 ```
 
+Slack publish now retries transient failures with exponential backoff (default: max 3 attempts).
+
 Notification providers are now resolved through config. Slack remains provider #1:
 
 ```json

@@ -13,6 +13,7 @@ const commands = yargs(rawArguments)
     .command("release preview", "Preview release details without creating a GitHub release")
     .command("doctor", "Run environment and connectivity diagnostics")
     .command("config init", "Create yaba.config.json in the current directory")
+    .command("config validate", "Validate resolved yaba configuration")
     .option("o", {alias: "owner", describe: "The repository owner.", type: "string"})
     .option("r", {alias: "repo", describe: "The repository name.", type: "string"})
     .option("t", {alias: "tag", describe: "The name of the tag.", type: "string"})
@@ -172,8 +173,10 @@ function resolveCommand(parsed) {
         }
     }
 
-    if (positional.length === 2 && positional[0] === "config" && positional[1] === "init") {
-        return "config.init";
+    if (positional.length === 2 && positional[0] === "config") {
+        if (positional[1] === "init" || positional[1] === "validate") {
+            return `config.${positional[1]}`;
+        }
     }
 
     if (positional.length === 2 && positional[0] === "release") {
@@ -202,14 +205,14 @@ function resolveReleaseAction(parsed) {
 }
 
 function resolveConfigAction(parsed) {
-    const candidates = [parsed.init, parsed.action];
+    const candidates = [parsed.init, parsed.validate, parsed.action];
     for (const candidate of candidates) {
         if (typeof candidate !== "string") {
             continue;
         }
 
         const normalized = candidate.trim().toLowerCase();
-        if (normalized === "init") {
+        if (normalized === "init" || normalized === "validate") {
             return normalized;
         }
     }

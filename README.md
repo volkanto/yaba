@@ -8,6 +8,11 @@
 [![downloads](https://img.shields.io/npm/dm/yaba-release-cli?style=flat-square&color=%23007a1f)](https://npmcharts.com/compare/yaba-release-cli)
 [![license](https://img.shields.io/npm/l/yaba-release-cli?color=%23007a1f&style=flat-square)](https://github.com//volkanto/blob/master/LICENSE)
 
+## Documentation
+
+- [Architecture](./docs/architecture.md)
+- [Development Guide](./docs/development.md)
+
 ## Prerequisites
 
 You need `npm` in order to run the project on your local environment.

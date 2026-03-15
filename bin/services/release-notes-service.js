@@ -1,24 +1,29 @@
 import * as templateUtils from "../utils/template-utils.js";
 
-const labelBuckets = [
+const DEFAULT_LABEL_BUCKETS = [
     {
         key: "breakingChanges",
+        title: "Breaking Changes",
         labels: ["breaking", "type:breaking", "semver:major"]
     },
     {
         key: "features",
+        title: "Features",
         labels: ["feature", "enhancement", "type:feature", "feat"]
     },
     {
         key: "fixes",
+        title: "Fixes",
         labels: ["fix", "bug", "bugfix", "type:fix"]
     },
     {
         key: "dependencies",
+        title: "Dependencies",
         labels: ["dependencies", "dependency", "deps", "type:dependencies", "type:deps", "renovate"]
     },
     {
         key: "documentation",
+        title: "Documentation",
         labels: ["docs", "documentation", "type:docs"]
     }
 ];
@@ -31,7 +36,8 @@ export async function buildReleaseNotesBundle({
     releaseName,
     preparedChangeLog,
     changeLog,
-    fetchPullRequest
+    fetchPullRequest,
+    labelBuckets
 }) {
     const compareUrl = buildCompareUrl(owner, repo, previousTag, currentTag);
     const commitEntries = normalizeCommitEntries(changeLog);
@@ -44,20 +50,25 @@ export async function buildReleaseNotesBundle({
     let grouped = null;
 
     if (hasLabels) {
-        grouped = groupPullRequestsByLabels(pullRequests);
+        const activeBuckets = Array.isArray(labelBuckets) && labelBuckets.length > 0
+            ? labelBuckets
+            : DEFAULT_LABEL_BUCKETS;
+
+        grouped = groupPullRequestsByLabels(pullRequests, activeBuckets);
+
+        const sectionsStr = [
+            ...activeBuckets.map(bucket => renderSection(resolveSectionTitle(bucket), grouped[bucket.key])),
+            renderSection("Internal", grouped.internal)
+        ].filter(Boolean).join("\n");
+
         githubReleaseBody = templateUtils.generateGroupedGithubReleaseNotes(
             owner,
             repo,
             previousTag,
             currentTag,
             {
-                highlights: renderHighlights(grouped),
-                breakingChangesSection: renderSection("Breaking Changes", grouped.breakingChanges),
-                featuresSection: renderSection("Features", grouped.features),
-                fixesSection: renderSection("Fixes", grouped.fixes),
-                dependenciesSection: renderSection("Dependencies", grouped.dependencies),
-                documentationSection: renderSection("Documentation", grouped.documentation),
-                internalSection: renderSection("Internal", grouped.internal)
+                highlights: renderHighlights(grouped, activeBuckets),
+                sections: sectionsStr
             }
         );
         mode = "labels";
@@ -80,7 +91,8 @@ export async function buildReleaseNotesBundle({
             releaseName: releaseName,
             compareUrl: compareUrl,
             grouped: grouped,
-            commitEntries: commitEntries
+            commitEntries: commitEntries,
+            activeBuckets: Array.isArray(labelBuckets) && labelBuckets.length > 0 ? labelBuckets : DEFAULT_LABEL_BUCKETS
         })
     };
 }
@@ -142,32 +154,33 @@ async function resolvePullRequests(pullRequestNumbers, fetchPullRequest) {
     return results.filter(Boolean);
 }
 
-function groupPullRequestsByLabels(pullRequests) {
-    const grouped = {
-        breakingChanges: [],
-        features: [],
-        fixes: [],
-        dependencies: [],
-        documentation: [],
-        internal: []
-    };
+function groupPullRequestsByLabels(pullRequests, activeBuckets) {
+    const grouped = { internal: [] };
+    for (const bucket of activeBuckets) {
+        grouped[bucket.key] = [];
+    }
 
     for (const pullRequest of pullRequests) {
-        const bucket = resolveBucket(pullRequest.labels);
+        const bucket = resolveBucket(pullRequest.labels, activeBuckets);
         grouped[bucket].push(pullRequest);
     }
 
     return grouped;
 }
 
-function resolveBucket(labels) {
-    for (const bucket of labelBuckets) {
+function resolveBucket(labels, activeBuckets) {
+    for (const bucket of activeBuckets) {
         if (labels.some(label => bucket.labels.includes(label))) {
             return bucket.key;
         }
     }
 
     return "internal";
+}
+
+function resolveSectionTitle(bucket) {
+    return bucket.title
+        ?? bucket.key.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase());
 }
 
 function renderPullRequestList(items) {
@@ -184,20 +197,26 @@ function renderSection(title, items) {
     return `## ${title}\n\n${renderPullRequestList(items)}\n`;
 }
 
-function renderHighlights(grouped) {
+function renderHighlights(grouped, activeBuckets) {
     const highlights = [];
+    const find = key => activeBuckets.find(b => b.key === key);
 
-    if (grouped.breakingChanges.length > 0) {
-        highlights.push(`- ${grouped.breakingChanges.length} breaking change update(s) in this release.`);
+    const breaking = find("breakingChanges");
+    const features = find("features");
+    const fixes = find("fixes");
+    const deps = find("dependencies");
+
+    if (breaking && grouped[breaking.key]?.length > 0) {
+        highlights.push(`- ${grouped[breaking.key].length} breaking change update(s) in this release.`);
     }
-    if (grouped.features.length > 0) {
-        highlights.push(`- ${grouped.features.length} feature enhancement(s) added.`);
+    if (features && grouped[features.key]?.length > 0) {
+        highlights.push(`- ${grouped[features.key].length} feature enhancement(s) added.`);
     }
-    if (grouped.fixes.length > 0) {
-        highlights.push(`- ${grouped.fixes.length} fix(es) included for stability.`);
+    if (fixes && grouped[fixes.key]?.length > 0) {
+        highlights.push(`- ${grouped[fixes.key].length} fix(es) included for stability.`);
     }
-    if (grouped.dependencies.length > 0) {
-        highlights.push(`- ${grouped.dependencies.length} dependency update(s) included.`);
+    if (deps && grouped[deps.key]?.length > 0) {
+        highlights.push(`- ${grouped[deps.key].length} dependency update(s) included.`);
     }
     if (highlights.length === 0) {
         highlights.push("- Maintenance and internal improvements included.");
@@ -206,16 +225,19 @@ function renderHighlights(grouped) {
     return highlights.join("\n");
 }
 
-function buildSlackNewsletter({ releaseName, compareUrl, grouped, commitEntries }) {
+function buildSlackNewsletter({ releaseName, compareUrl, grouped, commitEntries, activeBuckets }) {
     const shipped = grouped
-        ? buildShippedFromPullRequests(grouped)
+        ? buildShippedFromPullRequests(grouped, activeBuckets)
         : buildShippedFromCommits(commitEntries);
 
-    const whyMatters = grouped && grouped.features.length > 0
+    const findFeatures = activeBuckets.find(b => b.key === "features");
+    const findBreaking = activeBuckets.find(b => b.key === "breakingChanges");
+
+    const whyMatters = grouped && findFeatures && grouped[findFeatures.key]?.length > 0
         ? "- Developer workflows gain new capabilities.\n- Release safety and validation behavior are stronger."
         : "- Release stability and maintainability improvements are included.";
 
-    const actionRequired = grouped && grouped.breakingChanges.length > 0
+    const actionRequired = grouped && findBreaking && grouped[findBreaking.key]?.length > 0
         ? "- Review the breaking changes section in GitHub release notes."
         : "- No mandatory migration action required.";
 
@@ -236,14 +258,11 @@ function buildSlackNewsletter({ releaseName, compareUrl, grouped, commitEntries 
     ].join("\n");
 }
 
-function buildShippedFromPullRequests(grouped) {
-    const ordered = [
-        ...grouped.features,
-        ...grouped.fixes,
-        ...grouped.dependencies,
-        ...grouped.documentation,
-        ...grouped.internal
-    ].slice(0, 5);
+function buildShippedFromPullRequests(grouped, activeBuckets) {
+    const ordered = activeBuckets
+        .flatMap(bucket => grouped[bucket.key] ?? [])
+        .concat(grouped.internal ?? [])
+        .slice(0, 5);
 
     if (ordered.length === 0) {
         return "- Maintenance updates in this release.";

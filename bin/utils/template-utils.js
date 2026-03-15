@@ -34,23 +34,18 @@ export function generateChangelog(body, owner, repo, previousTag, currentTag) {
  * @param {*} repo the repository name
  * @param {*} previousTag the previous release tag/reference
  * @param {*} currentTag the new release tag
- * @param {*} sections grouped markdown sections
+ * @param {*} data sections data with highlights and pre-rendered sections
  * @returns {string}
  */
-export function generateGroupedGithubReleaseNotes(owner, repo, previousTag, currentTag, sections) {
+export function generateGroupedGithubReleaseNotes(owner, repo, previousTag, currentTag, data) {
     const template = this.retrieveFile(appConstants.GITHUB_RELEASE_TEMPLATE);
     return format(template, {
         owner: owner,
         repo: repo,
         lastTag: previousTag,
         newTag: currentTag,
-        highlights: sections.highlights,
-        breakingChangesSection: sections.breakingChangesSection,
-        featuresSection: sections.featuresSection,
-        fixesSection: sections.fixesSection,
-        dependenciesSection: sections.dependenciesSection,
-        documentationSection: sections.documentationSection,
-        internalSection: sections.internalSection
+        highlights: data.highlights,
+        sections: data.sections
     });
 }
 

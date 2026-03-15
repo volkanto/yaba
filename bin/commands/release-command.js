@@ -5,7 +5,7 @@ import { exitCodes } from "../utils/exit-codes.js";
 import { createError } from "../utils/errors.js";
 import { isNonEmptyString } from "../utils/runtime-config.js";
 import { publishReleaseNotifications } from "../notifications/publisher.js";
-import { printChangelog, printJson, printReleasePreview } from "../services/command-output.js";
+import { printChangelog, printJson, printReleasePreview, printNotificationPreview } from "../services/command-output.js";
 import { buildReleaseNotesBundle } from "../services/release-notes-service.js";
 import { resolveReleaseTag } from "../services/tag-resolution-service.js";
 import {
@@ -49,6 +49,31 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
     );
 
     if (options.releaseCommand === "preview") {
+        let notificationPreview = null;
+        if (options.notifications) {
+            const lastReleaseTag = resolveLastReleaseTag(lastRelease, releaseTarget);
+            const releaseName = helper.releaseName(releaseContext.releaseName);
+            const releaseNotes = await buildReleaseNotesBundle({
+                owner: repoOwner,
+                repo: releaseRepo,
+                previousTag: lastReleaseTag,
+                currentTag: releaseTag,
+                releaseName: releaseName,
+                preparedChangeLog: preparedChangeLog,
+                changeLog: changeLog,
+                fetchPullRequest: async pullNumber =>
+                    await flow.fetchPullRequestByNumber(repoOwner, releaseRepo, pullNumber),
+                labelBuckets: releaseContext.labelBuckets
+            });
+
+            notificationPreview = {
+                provider: options.notifications,
+                body: options.notifications === "slack"
+                    ? releaseNotes.slackNewsletterBody
+                    : releaseNotes.githubReleaseBody
+            };
+        }
+
         if (isJsonOutput) {
             printJson({
                 command: "release.preview",
@@ -61,10 +86,14 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
                 previousTagSource: releasePreview.releaseTagSource,
                 draft: releasePreview.draft,
                 targetCommitish: releasePreview.targetCommitish,
-                changelog: releasePreview.changelogBody
+                changelog: releasePreview.changelogBody,
+                notificationPreview: notificationPreview
             });
         } else {
             printReleasePreview(releasePreview);
+            if (notificationPreview) {
+                printNotificationPreview(notificationPreview);
+            }
         }
         return exitCodes.SUCCESS;
     }
@@ -102,7 +131,8 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
             lastReleaseTag,
             releaseContext,
             releaseTarget,
-            releaseTag
+            releaseTag,
+            releaseContext.labelBuckets
         );
 
         if (isJsonOutput) {
@@ -138,7 +168,7 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
     return exitCodes.SUCCESS;
 }
 
-async function prepareRelease(changeLog, preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseContext, targetCommitish, releaseTag) {
+async function prepareRelease(changeLog, preparedChangeLog, repoOwner, releaseRepo, lastReleaseTag, releaseContext, targetCommitish, releaseTag, labelBuckets) {
     const hasReleaseCreatePermission = await helper.releaseCreatePermit(releaseContext.interactive);
 
     if (!hasReleaseCreatePermission) {
@@ -156,7 +186,8 @@ async function prepareRelease(changeLog, preparedChangeLog, repoOwner, releaseRe
         changeLog: changeLog,
         fetchPullRequest: async pullNumber => {
             return await flow.fetchPullRequestByNumber(repoOwner, releaseRepo, pullNumber);
-        }
+        },
+        labelBuckets: labelBuckets
     });
 
     const releaseUrl = await flow.createRelease(

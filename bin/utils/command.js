@@ -98,6 +98,11 @@ const commands = yargs(rawArguments)
         describe: "Publishes the release announcement to the defined Slack channel",
         type: "boolean"
     })
+    .option("notifications", {
+        describe: "Preview the notification message for the given provider.",
+        choices: ["slack", "github"],
+        type: "string"
+    })
     .option("format", {
         describe: "Output format.",
         choices: ["human", "json"],
@@ -158,6 +163,7 @@ function normalizeOptions(parsed) {
     normalized.allowEmpty = parsed["allow-empty"] === true;
     normalized.failOnEmpty = parsed["fail-on-empty"] === true;
     normalized.maxCommits = maxCommitsProvided ? parsed["max-commits"] : undefined;
+    normalized.notifications = parsed.notifications;
     normalized.deprecationWarnings = collectDeprecationWarnings(parsed, commandName, yesProvided);
 
     return normalized;

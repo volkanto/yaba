@@ -41,6 +41,16 @@ test('parses release preview command with json output option', () => {
     assert.equal(options.target, 'abc123');
 });
 
+test('parses release preview command with notifications option', () => {
+    const { options: slackOptions, supported: slackSupported } = parseOptions(['release', 'preview', '--notifications', 'slack']);
+    assert.equal(slackSupported, true);
+    assert.equal(slackOptions.notifications, 'slack');
+
+    const { options: githubOptions, supported: githubSupported } = parseOptions(['release', 'preview', '--notifications', 'github']);
+    assert.equal(githubSupported, true);
+    assert.equal(githubOptions.notifications, 'github');
+});
+
 test('maps --yes to non-interactive mode and emits deprecation warning', () => {
     const { options, supported } = parseOptions(['release', 'create', '--yes']);
     assert.equal(supported, true);

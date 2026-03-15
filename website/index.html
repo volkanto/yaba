@@ -51,7 +51,7 @@
         <p class="hero-copy">
           Yaba helps teams prepare changelogs, preview release payloads, create GitHub releases, and wire Slack notifications
           into repeatable release workflows. Recent upgrades add target-based release generation, release safety controls,
-          config validation, channel-specific release notes, strategy-based tag generation, and resilient Slack retries.
+          config validation, configurable release notes grouping, strategy-based tag generation, and resilient Slack retries.
         </p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="https://www.npmjs.com/package/yaba-release-cli" target="_blank" rel="noopener noreferrer">Install from npm</a>
@@ -114,8 +114,8 @@
             <p>Use <code>--allow-empty</code>, <code>--fail-on-empty</code>, and <code>--max-commits</code> to enforce policy.</p>
           </div>
           <div>
-            <h3>Channel-specific release notes</h3>
-            <p>GitHub notes can be PR-label grouped, while Slack uses a human-readable newsletter format.</p>
+            <h3>Customizable release notes</h3>
+            <p>GitHub notes grouped by PR labels with customizable label-to-section mappings via <code>labelBuckets</code> config. Slack uses a human-readable newsletter format.</p>
           </div>
           <div>
             <h3>Tag strategy engine</h3>
@@ -151,8 +151,8 @@
             <p>Added <code>config validate</code> and stronger schema checks for runtime configuration quality.</p>
           </article>
           <article class="card">
-            <h3>Release notes evolution</h3>
-            <p>Added label-grouped GitHub notes with fallback and a dedicated Slack newsletter-style template.</p>
+            <h3>Configurable release notes</h3>
+            <p>Teams can now customize label-to-section mappings via <code>labelBuckets</code> config for flexible release notes grouping. Includes fallback and Slack newsletter-style template.</p>
           </article>
           <article class="card">
             <h3>Tag policy system</h3>

@@ -51,16 +51,18 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout the code
+      - name: Checkout code
         uses: actions/checkout@v4
-      - name: Setup node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-      - name: Install Yaba
+      - name: Install Yaba CLI
         run: npm install -g yaba-release-cli
-      - name: Create GitHub release
+      - name: Validate release configuration
+        run: yaba config validate
+      - name: Create GitHub release with Yaba
         env:
           YABA_GITHUB_ACCESS_TOKEN: ${{ github.token }}
           YABA_GITHUB_REPO_OWNER: ${{ github.repository_owner }}

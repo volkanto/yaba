@@ -49,6 +49,8 @@ export function validateRuntimeConfigSchema(runtimeConfig, supportedNotification
     validateBoolean(runtimeConfig?.output?.color, "output.color", issues);
     validateBoolean(runtimeConfig?.output?.verbose, "output.verbose", issues);
 
+    validateLabelBuckets(runtimeConfig?.release?.labelBuckets, issues);
+
     return issues;
 }
 
@@ -129,4 +131,35 @@ function validateOutputFormat(value, path, issues) {
     if (normalized !== "human" && normalized !== "json") {
         issues.push(`${path} must be either 'human' or 'json'.`);
     }
+}
+
+function validateLabelBuckets(value, issues) {
+    if (value === null || value === undefined) return;
+
+    if (!Array.isArray(value)) {
+        issues.push("release.labelBuckets must be an array or null.");
+        return;
+    }
+
+    const keys = new Set();
+    value.forEach((bucket, i) => {
+        if (!bucket || typeof bucket !== "object") {
+            issues.push(`release.labelBuckets[${i}] must be an object.`);
+            return;
+        }
+        if (typeof bucket.key !== "string" || bucket.key.trim() === "") {
+            issues.push(`release.labelBuckets[${i}].key must be a non-empty string.`);
+        } else if (keys.has(bucket.key)) {
+            issues.push(`release.labelBuckets[${i}].key "${bucket.key}" is duplicated.`);
+        } else {
+            keys.add(bucket.key);
+        }
+        if (bucket.title !== undefined && (typeof bucket.title !== "string" || bucket.title.trim() === "")) {
+            issues.push(`release.labelBuckets[${i}].title must be a non-empty string when provided.`);
+        }
+        if (!Array.isArray(bucket.labels) || bucket.labels.length === 0
+                || bucket.labels.some(l => typeof l !== "string" || l.trim() === "")) {
+            issues.push(`release.labelBuckets[${i}].labels must be a non-empty array of non-empty strings.`);
+        }
+    });
 }

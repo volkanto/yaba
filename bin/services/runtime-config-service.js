@@ -31,7 +31,8 @@ export function buildDefaultConfigTemplate() {
             maxCommits: null,
             draft: false,
             interactive: true,
-            firstReleaseMaxCommits: 50
+            firstReleaseMaxCommits: 50,
+            labelBuckets: null
         },
         notifications: {
             providers: ["slack"],
@@ -123,7 +124,8 @@ export function resolveReleaseContext(options, runtimeConfig) {
             runtimeConfig?.release?.interactive,
             true
         ),
-        body: options.body
+        body: options.body,
+        labelBuckets: runtimeConfig?.release?.labelBuckets ?? null
     };
 }
 

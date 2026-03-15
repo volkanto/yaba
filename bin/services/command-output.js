@@ -78,6 +78,18 @@ export function printReleasePreview(releasePreview) {
     console.log("\n" + boxen(`\n${releasePreview.changelogBody}`, bodyBoxOptions));
 }
 
+export function printNotificationPreview(notificationPreview) {
+    const boxOptions = {
+        padding: 1,
+        title: `Notification Preview (${notificationPreview.provider})`,
+        titleAlignment: "left",
+        align: "left",
+        borderColor: "magenta",
+        borderStyle: "round"
+    };
+    console.log("\n" + boxen(`\n${notificationPreview.body}`, boxOptions));
+}
+
 export function printDoctorSummary(checks, exitCode) {
     const body = checks.map(check => {
         const status = check.skipped

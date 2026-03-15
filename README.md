@@ -107,9 +107,32 @@ Notification providers are now resolved through config. Slack remains provider #
 
 Release note rendering is channel-specific:
 
-- GitHub release notes: grouped by PR labels when available (`type:feature`, `type:fix`, `type:docs`, `type:breaking`, `dependencies`/`deps`).
+- GitHub release notes: grouped by PR labels when available. Teams can customize label-to-section mappings via `release.labelBuckets` in `yaba.config.json` (see [CONFIG.md](./CONFIG.md) for details). Default grouping includes: `type:feature`, `type:fix`, `type:docs`, `type:breaking`, `dependencies`/`deps`.
 - Slack release notes: rendered as a short newsletter for human readers.
 - Fallback: if label metadata is missing, GitHub notes fall back to the legacy commit-list structure.
+
+Custom label buckets example:
+
+```json
+{
+  "release": {
+    "labelBuckets": [
+      {
+        "key": "security",
+        "title": "Security Fixes",
+        "labels": ["security", "type:security"]
+      },
+      {
+        "key": "chore",
+        "title": "Chore",
+        "labels": ["chore", "type:chore"]
+      }
+    ]
+  }
+}
+```
+
+For complete configuration details, see [CONFIG.md](./CONFIG.md).
 
 ## Command Line Usage
 

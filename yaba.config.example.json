@@ -1,0 +1,68 @@
+{
+  "github": {
+    "owner": "your-org"
+  },
+  "release": {
+    "repo": "your-repo",
+    "tagPattern": "prod_global_{yyyyMMdd}.{HHmm}",
+    "tagStrategy": "pattern",
+    "tagOnConflict": "increment",
+    "tagMaxAttempts": 20,
+    "namePattern": "Global release {yyyy-MM-dd}",
+    "target": null,
+    "allowEmpty": false,
+    "failOnEmpty": false,
+    "maxCommits": null,
+    "draft": false,
+    "interactive": true,
+    "firstReleaseMaxCommits": 50,
+    "labelBuckets": [
+      {
+        "key": "breakingChanges",
+        "title": "Breaking Changes",
+        "labels": ["breaking", "type:breaking", "semver:major"]
+      },
+      {
+        "key": "features",
+        "title": "Features",
+        "labels": ["feature", "enhancement", "type:feature", "feat"]
+      },
+      {
+        "key": "fixes",
+        "title": "Bug Fixes",
+        "labels": ["bug", "fix", "bugfix", "type:fix"]
+      },
+      {
+        "key": "security",
+        "title": "Security Fixes",
+        "labels": ["security", "type:security"]
+      },
+      {
+        "key": "dependencies",
+        "title": "Dependencies",
+        "labels": ["dependencies", "dependency", "deps", "type:dependencies", "type:deps", "renovate"]
+      },
+      {
+        "key": "documentation",
+        "title": "Documentation",
+        "labels": ["docs", "documentation", "type:docs"]
+      },
+      {
+        "key": "chore",
+        "title": "Chore",
+        "labels": ["chore", "type:chore"]
+      }
+    ]
+  },
+  "notifications": {
+    "providers": ["slack"],
+    "slack": {
+      "enabled": false
+    }
+  },
+  "output": {
+    "format": "human",
+    "color": true,
+    "verbose": false
+  }
+}

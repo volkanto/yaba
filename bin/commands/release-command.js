@@ -49,23 +49,23 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
     );
 
     if (options.releaseCommand === "preview") {
+        const lastReleaseTag = resolveLastReleaseTag(lastRelease, releaseTarget);
+        const releaseName = helper.releaseName(releaseContext.releaseName);
+        const releaseNotes = await buildReleaseNotesBundle({
+            owner: repoOwner,
+            repo: releaseRepo,
+            previousTag: lastReleaseTag,
+            currentTag: releaseTag,
+            releaseName: releaseName,
+            preparedChangeLog: preparedChangeLog,
+            changeLog: changeLog,
+            fetchPullRequest: async pullNumber =>
+                await flow.fetchPullRequestByNumber(repoOwner, releaseRepo, pullNumber),
+            labelBuckets: releaseContext.labelBuckets
+        });
+
         let notificationPreview = null;
         if (options.notifications) {
-            const lastReleaseTag = resolveLastReleaseTag(lastRelease, releaseTarget);
-            const releaseName = helper.releaseName(releaseContext.releaseName);
-            const releaseNotes = await buildReleaseNotesBundle({
-                owner: repoOwner,
-                repo: releaseRepo,
-                previousTag: lastReleaseTag,
-                currentTag: releaseTag,
-                releaseName: releaseName,
-                preparedChangeLog: preparedChangeLog,
-                changeLog: changeLog,
-                fetchPullRequest: async pullNumber =>
-                    await flow.fetchPullRequestByNumber(repoOwner, releaseRepo, pullNumber),
-                labelBuckets: releaseContext.labelBuckets
-            });
-
             notificationPreview = {
                 provider: options.notifications,
                 body: options.notifications === "slack"
@@ -86,11 +86,11 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
                 previousTagSource: releasePreview.releaseTagSource,
                 draft: releasePreview.draft,
                 targetCommitish: releasePreview.targetCommitish,
-                changelog: releasePreview.changelogBody,
+                changelog: releaseNotes.githubReleaseBody,
                 notificationPreview: notificationPreview
             });
         } else {
-            printReleasePreview(releasePreview);
+            printReleasePreview({ ...releasePreview, changelogBody: releaseNotes.githubReleaseBody });
             if (notificationPreview) {
                 printNotificationPreview(notificationPreview);
             }

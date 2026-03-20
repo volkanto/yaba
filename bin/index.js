@@ -62,6 +62,9 @@ async function runYaba() {
             }));
         } else {
             console.error(kleur.red(normalizedError.message));
+            if (normalizedError.cause?.message) {
+                console.error(kleur.dim(normalizedError.cause.message));
+            }
         }
         return normalizedError.exitCode;
     }

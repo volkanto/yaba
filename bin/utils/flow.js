@@ -60,6 +60,46 @@ export async function checkInternetConnection() {
 }
 
 /**
+ * fetches all releases for a repository
+ *
+ * @param owner the owner of the repository
+ * @param repo the repository to fetch releases for
+ * @returns {Promise<any[]>}
+ */
+export async function fetchReleases(owner, repo, limit = 5) {
+    const fetchAll = limit === 0;
+    spinner.start('Fetching releases...');
+    try {
+        let releases = [];
+        if (!fetchAll && limit <= 100) {
+            const { data } = await octokit.request('GET /repos/{owner}/{repo}/releases', {
+                owner, repo, per_page: limit
+            });
+            releases = data;
+        } else {
+            let page = 1;
+            while (true) {
+                const { data } = await octokit.request('GET /repos/{owner}/{repo}/releases', {
+                    owner, repo, per_page: 100, page
+                });
+                releases = releases.concat(data);
+                if (data.length < 100) break;
+                if (!fetchAll && releases.length >= limit) {
+                    releases = releases.slice(0, limit);
+                    break;
+                }
+                page++;
+            }
+        }
+        spinner.succeed(`Found ${releases.length} release(s).`);
+        return releases;
+    } catch (error) {
+        spinner.fail('Failed to fetch releases.');
+        throw mapGithubError(error, 'Failed to fetch releases.');
+    }
+}
+
+/**
  * fetches the last release
  *
  * @param owner the owner of the repository

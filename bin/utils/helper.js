@@ -46,14 +46,15 @@ export function releaseTagName(tagName) {
  */
 export function promoteTagPrecisionToSeconds(tagName, now = new Date()) {
     const normalized = `${tagName || ""}`.trim();
-    const matched = normalized.match(/^prod_global_(\d{8})\.(\d{4})$/);
+    const matched = normalized.match(/^((?:hotfix_)?prod_global_)(\d{8})\.(\d{4})$/);
     if (!matched) {
         return null;
     }
 
-    const datePart = matched[1];
+    const prefix = matched[1];
+    const datePart = matched[2];
     const secondPrecision = format(now, "HHmmss");
-    return `prod_global_${datePart}.${secondPrecision}`;
+    return `${prefix}${datePart}.${secondPrecision}`;
 }
 
 /**

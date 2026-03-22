@@ -20,3 +20,15 @@ test("promoteTagPrecisionToSeconds returns null for non-matching tags", () => {
     assert.equal(promoteTagPrecisionToSeconds("v2.1.0"), null);
     assert.equal(promoteTagPrecisionToSeconds("prod_global_20260308.142359"), null);
 });
+
+test("promoteTagPrecisionToSeconds upgrades minute-precision hotfix_prod_global tags", () => {
+    const fallbackTag = promoteTagPrecisionToSeconds(
+        "hotfix_prod_global_20260322.0915",
+        new Date("2026-03-22T09:15:47")
+    );
+    assert.equal(fallbackTag, "hotfix_prod_global_20260322.091547");
+});
+
+test("promoteTagPrecisionToSeconds returns null for already-second-precision hotfix tags", () => {
+    assert.equal(promoteTagPrecisionToSeconds("hotfix_prod_global_20260322.091547"), null);
+});

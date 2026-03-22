@@ -64,7 +64,7 @@ export function promoteTagPrecisionToSeconds(tagName, now = new Date()) {
  * @returns {string|*}
  */
 export function releaseName(name) {
-    return isBlank(name) ? `Global release ${this.releaseDate()}` : name;
+    return isBlank(name) ? `Global release ${releaseDate()}` : name;
 }
 
 /**
@@ -107,12 +107,12 @@ export function isGitRepo() {
  * @returns {string}
  */
 export function retrieveCurrentRepoName() {
-    if (!this.isGitRepo()) {
+    if (!isGitRepo()) {
         return "not a git repo";
     }
     const remoteUrl = runGitCommand(['config', '--get', 'remote.origin.url']);
     const remoteRepoName = retrieveRepoNameFromRemote(remoteUrl);
-    return remoteRepoName || this.retrieveCurrentDirectory();
+    return remoteRepoName || retrieveCurrentDirectory();
 }
 
 /**
@@ -145,7 +145,7 @@ export function retrieveOwner(owner, username) {
  * @returns {string}
  */
 export function retrieveReleaseRepo(repo) {
-    return (repo || this.retrieveCurrentRepoName());
+    return (repo || retrieveCurrentRepoName());
 }
 
 /**

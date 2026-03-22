@@ -162,8 +162,8 @@ export async function fetchHeadBranch(owner, repo) {
 export async function prepareChangeLog(owner, repo, head, lastRelease) {
 
     let changeLog = lastRelease == null
-        ? await this.listCommits(owner, repo, head)
-        : await this.prepareChangelog(owner, repo, lastRelease.tag_name, head);
+        ? await listCommits(owner, repo, head)
+        : await prepareChangelog(owner, repo, lastRelease.tag_name, head);
 
     return changeLog;
 }

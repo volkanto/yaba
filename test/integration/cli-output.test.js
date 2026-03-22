@@ -15,6 +15,31 @@ test("unsupported command returns JSON error payload with validation exit code",
     assert.match(payload.message, /Unsupported command/);
 });
 
+test("unsupported command error message lists all supported commands", () => {
+    const result = runCli(["foo", "--format", "json"]);
+
+    const payload = JSON.parse(result.stderr.trim());
+    assert.match(payload.message, /release list/);
+    assert.match(payload.message, /release hotfix/);
+});
+
+test("invalid JSON config file reports parse error detail", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "yaba-invalid-json-"));
+    const configPath = path.join(tmpDir, "yaba.config.json");
+    fs.writeFileSync(configPath, "{ not valid json }");
+
+    const result = runCli(["release", "create", "--config", configPath, "--format", "json"], {
+        YABA_GITHUB_ACCESS_TOKEN: "token"
+    });
+
+    assert.equal(result.status, 1);
+    const payload = JSON.parse(result.stderr.trim());
+    assert.match(payload.message, /not valid JSON/i);
+    assert.match(payload.message, /Expected property name/i);
+
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
 test("unsupported command in human mode writes plain text error", () => {
     const result = runCli(["foo"]);
 

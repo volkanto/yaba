@@ -88,7 +88,7 @@ function validateCommandSupport() {
     }
 
     throw createError(
-        "Unsupported command. Use 'yaba release create --help', 'yaba release preview --help', 'yaba doctor --help', 'yaba config init --help', or 'yaba config validate --help' for usage details.",
+        "Unsupported command. Use 'yaba release create --help', 'yaba release preview --help', 'yaba release list --help', 'yaba release hotfix --help', 'yaba doctor --help', 'yaba config init --help', or 'yaba config validate --help' for usage details.",
         exitCodes.VALIDATION
     );
 }

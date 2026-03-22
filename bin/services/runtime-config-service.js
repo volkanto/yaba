@@ -223,7 +223,7 @@ function mergeConfigFile(target, filePath, required, loadedSources, loadedSet) {
     try {
         parsedContent = JSON.parse(fs.readFileSync(filePath, "utf8"));
     } catch (error) {
-        throw createError(`Config file '${filePath}' is not valid JSON.`, exitCodes.VALIDATION);
+        throw createError(`Config file '${filePath}' is not valid JSON: ${error.message}`, exitCodes.VALIDATION);
     }
 
     if (!isPlainObject(parsedContent)) {

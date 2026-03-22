@@ -24,8 +24,11 @@ export async function resolveReleaseTag({
     now = new Date(),
     env = process.env,
     packageVersion = packageInfo.version,
-    tagExists = async () => false
+    tagExists
 }) {
+    if (typeof tagExists !== "function") {
+        throw createError("tagExists callback is required for conflict detection.", exitCodes.VALIDATION);
+    }
     const resolvedStrategy = normalizeTagStrategy(tagStrategy);
     const resolvedConflictPolicy = normalizeTagConflictPolicy(tagOnConflict);
     const resolvedMaxAttempts = normalizeTagMaxAttempts(tagMaxAttempts);
@@ -246,10 +249,10 @@ function sanitizeToken(value, fallback) {
 
 function promoteMinuteTagToSeconds(tagName, now) {
     const normalized = `${tagName || ""}`.trim();
-    const matched = normalized.match(/^prod_global_(\d{8})\.(\d{4})$/);
+    const matched = normalized.match(/^((?:hotfix_)?prod_global_)(\d{8})\.(\d{4})$/);
     if (!matched) {
         return null;
     }
 
-    return `prod_global_${matched[1]}.${extractUtcDateParts(now).hhmmss}`;
+    return `${matched[1]}${matched[2]}.${extractUtcDateParts(now).hhmmss}`;
 }

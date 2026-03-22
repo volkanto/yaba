@@ -78,6 +78,30 @@ test("resolveReleaseTag increments suffix when promoted tag still exists", async
     assert.equal(resolved, "prod_global_20260308.142345.1");
 });
 
+test("resolveReleaseTag promotes minute-precision hotfix_prod_global tag to second precision on conflict", async () => {
+    const resolved = await resolveReleaseTag({
+        tagStrategy: "pattern",
+        tagPattern: "hotfix_prod_global_{yyyyMMdd}.{HHmm}",
+        now: new Date("2026-03-22T09:15:47.000Z"),
+        tagExists: async tagName => tagName === "hotfix_prod_global_20260322.0915"
+    });
+
+    assert.equal(resolved, "hotfix_prod_global_20260322.091547");
+});
+
+test("resolveReleaseTag throws when tagExists is not provided", async () => {
+    await assert.rejects(
+        async () => {
+            await resolveReleaseTag({
+                tagStrategy: "pattern",
+                tagPattern: "prod_global_{yyyyMMdd}.{HHmm}",
+                now: new Date("2026-03-08T14:23:45.000Z")
+            });
+        },
+        /tagExists callback is required/i
+    );
+});
+
 test("resolveReleaseTag fills shortSha, branch and runNumber pattern tokens", async () => {
     const resolved = await resolveReleaseTag({
         tagStrategy: "pattern",

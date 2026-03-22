@@ -142,6 +142,28 @@ export function printConfigInitSummary(configPath, overwritten) {
     console.log("\n" + boxen(lines, configBoxOptions));
 }
 
+export function printReleaseDetails(release) {
+    const lines = [
+        `Tag:          ${release.tag_name}`,
+        `Name:         ${release.name || '(no name)'}`,
+        `Published:    ${release.published_at ? new Date(release.published_at).toLocaleString() : 'draft'}`,
+        `Draft:        ${release.draft ? 'yes' : 'no'}`,
+        `Pre-release:  ${release.prerelease ? 'yes' : 'no'}`,
+        `URL:          ${release.html_url}`,
+        '',
+        release.body || '(no release notes)'
+    ].join('\n');
+
+    console.log('\n' + boxen(lines, {
+        padding: 1,
+        title: 'Release Details',
+        titleAlignment: 'left',
+        align: 'left',
+        borderColor: 'cyan',
+        borderStyle: 'round'
+    }));
+}
+
 export function printConfigValidateSummary(result) {
     const issueLines = result.issues.length === 0
         ? "No validation issues found."

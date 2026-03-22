@@ -109,3 +109,26 @@ test('rejects unsupported command input', () => {
     assert.equal(supported, false);
     assert.equal(options.commandName, null);
 });
+
+test('parses release list command', () => {
+    const { options, supported } = parseOptions(['release', 'list']);
+    assert.equal(supported, true);
+    assert.equal(options.commandName, 'release.list');
+    assert.equal(options.releaseCommand, 'list');
+});
+
+test('release list without --limit has undefined releaseListLimit', () => {
+    const { options } = parseOptions(['release', 'list']);
+    assert.equal(options.releaseListLimit, undefined);
+});
+
+test('parses release list --limit as releaseListLimit', () => {
+    const { options, supported } = parseOptions(['release', 'list', '--limit', '10']);
+    assert.equal(supported, true);
+    assert.equal(options.releaseListLimit, 10);
+});
+
+test('parses release list --limit 0 for all releases', () => {
+    const { options } = parseOptions(['release', 'list', '--limit', '0']);
+    assert.equal(options.releaseListLimit, 0);
+});

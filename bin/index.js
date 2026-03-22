@@ -8,6 +8,7 @@ import { exitCodes } from "./utils/exit-codes.js";
 import { createError, normalizeError } from "./utils/errors.js";
 import { resolveOutputFormatFromSources } from "./utils/runtime-config.js";
 import { runReleaseCommand } from "./commands/release-command.js";
+import { runReleaseListCommand } from "./commands/release-list-command.js";
 import { runDoctorCommand } from "./commands/doctor-command.js";
 import { runConfigInitCommand } from "./commands/config-init-command.js";
 import { runConfigValidateCommand } from "./commands/config-validate-command.js";
@@ -51,6 +52,12 @@ async function runYaba() {
         }
 
         flow.checkRequiredEnvVariables();
+
+        if (isReleaseListCommand(options)) {
+            await flow.checkInternetConnection();
+            return await runReleaseListCommand(options, runtimeConfig, output.isJson());
+        }
+
         return await runReleaseCommand(options, runtimeConfig, output.isJson());
     } catch (error) {
         const normalizedError = normalizeError(error);
@@ -103,4 +110,8 @@ function isConfigInitCommand(parsedOptions) {
 
 function isConfigValidateCommand(parsedOptions) {
     return parsedOptions.commandName === "config.validate";
+}
+
+function isReleaseListCommand(parsedOptions) {
+    return parsedOptions.commandName === "release.list";
 }

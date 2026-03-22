@@ -27,3 +27,16 @@ test("release create returns JSON validation error when token is missing", () =>
     assert.equal(payload.exitCode, 1);
     assert.match(payload.message, /required env variables/i);
 });
+
+test("release list returns JSON validation error when token is missing", () => {
+    const result = runCli(
+        ["release", "list", "--repo", "yaba", "--owner", "volkanto", "--format", "json"],
+        { YABA_GITHUB_ACCESS_TOKEN: "" }
+    );
+
+    assert.equal(result.status, 1);
+    const payload = JSON.parse(result.stderr.trim());
+    assert.equal(payload.status, "error");
+    assert.equal(payload.exitCode, 1);
+    assert.match(payload.message, /required env variables/i);
+});

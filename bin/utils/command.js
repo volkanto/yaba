@@ -11,6 +11,7 @@ const commands = yargs(rawArguments)
     .usage("Usage: yaba <release|doctor|config> [options]")
     .command("release create", "Create a GitHub release for a repository")
     .command("release preview", "Preview release details without creating a GitHub release")
+    .command("release list", "List GitHub releases for a repository")
     .command("doctor", "Run environment and connectivity diagnostics")
     .command("config init", "Create yaba.config.json in the current directory")
     .command("config validate", "Validate resolved yaba configuration")
@@ -103,6 +104,10 @@ const commands = yargs(rawArguments)
         choices: ["slack", "github"],
         type: "string"
     })
+    .option("limit", {
+        describe: "Number of releases to list (0 = all).",
+        type: "number"
+    })
     .option("format", {
         describe: "Output format.",
         choices: ["human", "json"],
@@ -163,6 +168,7 @@ function normalizeOptions(parsed) {
     normalized.allowEmpty = parsed["allow-empty"] === true;
     normalized.failOnEmpty = parsed["fail-on-empty"] === true;
     normalized.maxCommits = maxCommitsProvided ? parsed["max-commits"] : undefined;
+    normalized.releaseListLimit = typeof parsed.limit === 'number' ? parsed.limit : undefined;
     normalized.notifications = parsed.notifications;
     normalized.deprecationWarnings = collectDeprecationWarnings(parsed, commandName, yesProvided);
 
@@ -225,7 +231,7 @@ function resolveCommand(parsed) {
     }
 
     if (positional.length === 2 && positional[0] === "release") {
-        if (positional[1] === "create" || positional[1] === "preview") {
+        if (positional[1] === "create" || positional[1] === "preview" || positional[1] === "list") {
             return `release.${positional[1]}`;
         }
     }
@@ -234,14 +240,14 @@ function resolveCommand(parsed) {
 }
 
 function resolveReleaseAction(parsed) {
-    const candidates = [parsed.preview, parsed.create, parsed.action];
+    const candidates = [parsed.preview, parsed.create, parsed.list, parsed.action];
     for (const candidate of candidates) {
         if (typeof candidate !== "string") {
             continue;
         }
 
         const normalized = candidate.trim().toLowerCase();
-        if (normalized === "create" || normalized === "preview") {
+        if (normalized === "create" || normalized === "preview" || normalized === "list") {
             return normalized;
         }
     }

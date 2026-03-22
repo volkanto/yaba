@@ -76,16 +76,14 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
 
         if (isJsonOutput) {
             printJson({
-                command: "release.preview",
-                status: "success",
-                owner: releasePreview.owner,
-                repo: releasePreview.repo,
-                releaseName: releasePreview.releaseName,
-                newTag: releasePreview.releaseTag,
-                previousTag: releasePreview.lastReleaseTag,
+                ...buildReleaseJsonBase("release.preview", releasePreview.owner, releasePreview.repo, {
+                    releaseName: releasePreview.releaseName,
+                    newTag: releasePreview.releaseTag,
+                    previousTag: releasePreview.lastReleaseTag,
+                    draft: releasePreview.draft,
+                    targetCommitish: releasePreview.targetCommitish
+                }),
                 previousTagSource: releasePreview.releaseTagSource,
-                draft: releasePreview.draft,
-                targetCommitish: releasePreview.targetCommitish,
                 changelog: releaseNotes.githubReleaseBody,
                 notificationPreview: notificationPreview
             });
@@ -137,15 +135,13 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
 
         if (isJsonOutput) {
             printJson({
-                command: "release.create",
-                status: "success",
-                owner: repoOwner,
-                repo: releaseRepo,
-                releaseName: releaseResult.releaseName,
-                newTag: releaseResult.releaseTag,
-                previousTag: releaseResult.previousTag,
-                draft: releaseResult.draft,
-                targetCommitish: releaseResult.targetCommitish,
+                ...buildReleaseJsonBase("release.create", repoOwner, releaseRepo, {
+                    releaseName: releaseResult.releaseName,
+                    newTag: releaseResult.releaseTag,
+                    previousTag: releaseResult.previousTag,
+                    draft: releaseResult.draft,
+                    targetCommitish: releaseResult.targetCommitish
+                }),
                 releaseUrl: releaseResult.releaseUrl,
                 notificationProviders: releaseResult.notificationProviders,
                 releaseNotesMode: releaseResult.releaseNotesMode,
@@ -275,6 +271,10 @@ async function resolveTagName(repoOwner, releaseRepo, releaseContext, releaseTar
             return await flow.tagExists(repoOwner, releaseRepo, tagName);
         }
     });
+}
+
+function buildReleaseJsonBase(command, owner, repo, { releaseName, newTag, previousTag, draft, targetCommitish }) {
+    return { command, status: "success", owner, repo, releaseName, newTag, previousTag, draft, targetCommitish };
 }
 
 function buildReleasePreview(preparedChangeLog, repoOwner, releaseRepo, lastRelease, releaseTarget, releaseContext, releaseTag) {

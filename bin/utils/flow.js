@@ -28,7 +28,7 @@ export function setOutputFormat(format = 'human') {
 export function checkRequiredEnvVariables() {
 
     spinner.start('Checking required ENV variables...');
-    if (helper.requiredEnvVariablesExist() == false) {
+    if (helper.requiredEnvVariablesExist() === false) {
         spinner.fail('The required env variables are not set in order to run the command.');
         throw createError('The required env variables are not set in order to run the command.', exitCodes.VALIDATION);
     }
@@ -188,7 +188,7 @@ export async function prepareChangelog(owner, repo, base, head) {
             head: head
         });
 
-        if (changeLog.commits.length != 0) {
+        if (changeLog.commits.length !== 0) {
             spinner.succeed('Changelog has been prepared...');
         } else {
             spinner.succeed(kleur.yellow().underline('Nothing found to release.'));

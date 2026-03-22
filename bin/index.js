@@ -9,6 +9,7 @@ import { createError, normalizeError } from "./utils/errors.js";
 import { resolveOutputFormatFromSources } from "./utils/runtime-config.js";
 import { runReleaseCommand } from "./commands/release-command.js";
 import { runReleaseListCommand } from "./commands/release-list-command.js";
+import { runReleaseHotfixCommand } from "./commands/release-hotfix-command.js";
 import { runDoctorCommand } from "./commands/doctor-command.js";
 import { runConfigInitCommand } from "./commands/config-init-command.js";
 import { runConfigValidateCommand } from "./commands/config-validate-command.js";
@@ -56,6 +57,10 @@ async function runYaba() {
         if (isReleaseListCommand(options)) {
             await flow.checkInternetConnection();
             return await runReleaseListCommand(options, runtimeConfig, output.isJson());
+        }
+
+        if (isReleaseHotfixCommand(options)) {
+            return await runReleaseHotfixCommand(options, runtimeConfig, output.isJson());
         }
 
         return await runReleaseCommand(options, runtimeConfig, output.isJson());
@@ -114,4 +119,8 @@ function isConfigValidateCommand(parsedOptions) {
 
 function isReleaseListCommand(parsedOptions) {
     return parsedOptions.commandName === "release.list";
+}
+
+function isReleaseHotfixCommand(parsedOptions) {
+    return parsedOptions.commandName === "release.hotfix";
 }

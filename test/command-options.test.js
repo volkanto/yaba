@@ -132,3 +132,10 @@ test('parses release list --limit 0 for all releases', () => {
     const { options } = parseOptions(['release', 'list', '--limit', '0']);
     assert.equal(options.releaseListLimit, 0);
 });
+
+test('parses release hotfix command', () => {
+    const { options, supported } = parseOptions(['release', 'hotfix']);
+    assert.equal(supported, true);
+    assert.equal(options.commandName, 'release.hotfix');
+    assert.equal(options.releaseCommand, 'hotfix');
+});

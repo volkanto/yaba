@@ -12,6 +12,7 @@ const commands = yargs(rawArguments)
     .command("release create", "Create a GitHub release for a repository")
     .command("release preview", "Preview release details without creating a GitHub release")
     .command("release list", "List GitHub releases for a repository")
+    .command("release hotfix", "Create a hotfix GitHub release")
     .command("doctor", "Run environment and connectivity diagnostics")
     .command("config init", "Create yaba.config.json in the current directory")
     .command("config validate", "Validate resolved yaba configuration")
@@ -231,7 +232,7 @@ function resolveCommand(parsed) {
     }
 
     if (positional.length === 2 && positional[0] === "release") {
-        if (positional[1] === "create" || positional[1] === "preview" || positional[1] === "list") {
+        if (positional[1] === "create" || positional[1] === "preview" || positional[1] === "list" || positional[1] === "hotfix") {
             return `release.${positional[1]}`;
         }
     }
@@ -240,14 +241,14 @@ function resolveCommand(parsed) {
 }
 
 function resolveReleaseAction(parsed) {
-    const candidates = [parsed.preview, parsed.create, parsed.list, parsed.action];
+    const candidates = [parsed.preview, parsed.create, parsed.list, parsed.hotfix, parsed.action];
     for (const candidate of candidates) {
         if (typeof candidate !== "string") {
             continue;
         }
 
         const normalized = candidate.trim().toLowerCase();
-        if (normalized === "create" || normalized === "preview" || normalized === "list") {
+        if (normalized === "create" || normalized === "preview" || normalized === "list" || normalized === "hotfix") {
             return normalized;
         }
     }

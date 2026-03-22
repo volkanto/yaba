@@ -169,7 +169,7 @@ export function requiredEnvVariablesExist() {
  */
 export async function releaseCreatePermit(interactive) {
 
-    if (interactive == false) {
+    if (interactive === false) {
         return true;
     }
 

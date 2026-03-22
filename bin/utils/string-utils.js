@@ -6,7 +6,7 @@
  * @returns {boolean|boolean} true if the given string is blank, otherwise returns true
  */
 export function isBlank(str) {
-    return (str == "undefined" || !str || /^\s*$/.test(str));
+    return (str === "undefined" || !str || /^\s*$/.test(str));
 }
 
 /**

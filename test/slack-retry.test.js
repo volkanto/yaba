@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { publishToSlackWithRetry } from "../bin/utils/flow.js";
+import { publishWithRetry } from "../bin/utils/slack.js";
 
-test("publishToSlackWithRetry retries transient failures and succeeds", async () => {
+test("publishWithRetry retries transient failures and succeeds", async () => {
     let attempts = 0;
     const delays = [];
 
-    await publishToSlackWithRetry("https://hooks.slack.test/abc", { text: "hello" }, {
+    await publishWithRetry("https://hooks.slack.test/abc", { text: "hello" }, {
         maxAttempts: 3,
         baseDelayMs: 10,
         postFn: async () => {
@@ -26,13 +26,13 @@ test("publishToSlackWithRetry retries transient failures and succeeds", async ()
     assert.deepEqual(delays, [10, 20]);
 });
 
-test("publishToSlackWithRetry does not retry non-retriable failures", async () => {
+test("publishWithRetry does not retry non-retriable failures", async () => {
     let attempts = 0;
     const delays = [];
 
     await assert.rejects(
         async () => {
-            await publishToSlackWithRetry("https://hooks.slack.test/abc", { text: "hello" }, {
+            await publishWithRetry("https://hooks.slack.test/abc", { text: "hello" }, {
                 maxAttempts: 3,
                 baseDelayMs: 10,
                 postFn: async () => {
@@ -53,13 +53,13 @@ test("publishToSlackWithRetry does not retry non-retriable failures", async () =
     assert.deepEqual(delays, []);
 });
 
-test("publishToSlackWithRetry stops after max attempts", async () => {
+test("publishWithRetry stops after max attempts", async () => {
     let attempts = 0;
     const delays = [];
 
     await assert.rejects(
         async () => {
-            await publishToSlackWithRetry("https://hooks.slack.test/abc", { text: "hello" }, {
+            await publishWithRetry("https://hooks.slack.test/abc", { text: "hello" }, {
                 maxAttempts: 3,
                 baseDelayMs: 5,
                 postFn: async () => {

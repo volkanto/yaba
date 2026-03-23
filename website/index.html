@@ -51,7 +51,8 @@
         <p class="hero-copy">
           Yaba helps teams prepare changelogs, preview release payloads, create GitHub releases, and wire Slack notifications
           into repeatable release workflows. Recent upgrades add target-based release generation, release safety controls,
-          config validation, configurable release notes grouping, strategy-based tag generation, and resilient Slack retries.
+          config validation, configurable release notes grouping, strategy-based tag generation, resilient Slack retries,
+          and dedicated hotfix release support.
         </p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="https://www.npmjs.com/package/yaba-release-cli" target="_blank" rel="noopener noreferrer">Install from npm</a>
@@ -68,7 +69,7 @@
       <section class="section reveal" id="commands">
         <div class="section-heading">
           <p class="eyebrow">Core Commands</p>
-          <h2>Everything starts from five explicit commands</h2>
+          <h2>Everything starts from seven explicit commands</h2>
         </div>
         <div class="card-grid">
           <article class="card">
@@ -95,6 +96,16 @@
             <h3><code>config validate</code></h3>
             <p>Validates resolved configuration schema before release operations.</p>
             <p class="meta">Great for CI guardrails with <code>--format json</code>.</p>
+          </article>
+          <article class="card">
+            <h3><code>release list</code></h3>
+            <p>Browses the latest GitHub releases for a repository interactively or as JSON output.</p>
+            <p class="meta">Use <code>--limit</code> to control how many releases are fetched (default 5, 0 = all).</p>
+          </article>
+          <article class="card">
+            <h3><code>release hotfix</code></h3>
+            <p>Creates a hotfix release using the dedicated <code>hotfix_prod_global_YYYYMMDD.HHmm</code> tag format.</p>
+            <p class="meta">Inherits all <code>release create</code> options with the tag pattern enforced automatically.</p>
           </article>
         </div>
       </section>
@@ -135,32 +146,24 @@
       <section class="section reveal" id="updates">
         <div class="section-heading">
           <p class="eyebrow">Recent Updates</p>
-          <h2>What changed after v2.0.2</h2>
+          <h2>What changed after v2.2.0</h2>
         </div>
         <div class="card-grid">
           <article class="card">
-            <h3>Release workflow controls</h3>
-            <p>Added target commitish support and release safety guardrails for empty or oversized changelogs.</p>
+            <h3>release list command</h3>
+            <p>Browse the latest releases for any repository with an interactive selector. Supports <code>--limit</code> (default 5, 0 = all) and <code>--format json</code> for scripting.</p>
           </article>
           <article class="card">
-            <h3>Notification architecture</h3>
-            <p>Introduced provider-based notification abstraction and improved publish flow reliability.</p>
+            <h3>release hotfix command</h3>
+            <p>Dedicated hotfix release workflow with the <code>hotfix_prod_global_YYYYMMDD.HHmm</code> tag pattern enforced automatically. Supports second-precision fallback on tag conflicts.</p>
           </article>
           <article class="card">
-            <h3>Config maturity</h3>
-            <p>Added <code>config validate</code> and stronger schema checks for runtime configuration quality.</p>
+            <h3>Preview grouped format fix</h3>
+            <p>Release preview now consistently uses the grouped label-based format when PR label data is available, matching the format used at release creation time.</p>
           </article>
           <article class="card">
-            <h3>Configurable release notes</h3>
-            <p>Teams can now customize label-to-section mappings via <code>labelBuckets</code> config for flexible release notes grouping. Includes fallback and Slack newsletter-style template.</p>
-          </article>
-          <article class="card">
-            <h3>Tag policy system</h3>
-            <p>Added strategy-based tags (<code>pattern</code>, <code>semver</code>, <code>sha</code>) with conflict handling.</p>
-          </article>
-          <article class="card">
-            <h3>Test + docs upgrades</h3>
-            <p>Expanded integration coverage and refreshed architecture/development documentation for maintainability.</p>
+            <h3>Improved Slack error visibility</h3>
+            <p>When a Slack announcement fails after a successful release, the underlying error cause is now logged alongside the <code>PARTIAL_SUCCESS</code> exit, making it easier to diagnose webhook issues.</p>
           </article>
         </div>
       </section>

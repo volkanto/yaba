@@ -17,6 +17,8 @@ Yaba runs in three high-level phases:
 2. Resolve runtime configuration (flags, env, config files).
 3. Execute one command handler (`release`, `doctor`, or `config`) and return an exit code.
 
+Supported commands: `release create`, `release preview`, `release list`, `release hotfix`, `doctor`, `config init`, `config validate`.
+
 Main entrypoint:
 
 - `bin/index.js`
@@ -46,7 +48,9 @@ Main entrypoint:
 
 Command handlers contain command-specific orchestration only:
 
-- `bin/commands/release-command.js`
+- `bin/commands/release-command.js` — `release create` and `release preview`
+- `bin/commands/release-list-command.js` — `release list`
+- `bin/commands/release-hotfix-command.js` — `release hotfix` (thin wrapper over `release-command` with forced tag pattern)
 - `bin/commands/doctor-command.js`
 - `bin/commands/config-init-command.js`
 - `bin/commands/config-validate-command.js`
@@ -68,14 +72,15 @@ Services host reusable domain logic:
 
 ### 5) Integration Adapters
 
-`bin/utils/flow.js` is the external IO adapter layer:
+The external IO layer is split into focused modules:
 
-- GitHub API calls via `octokit`
-- network connectivity checks
-- Slack webhook publishing
-- spinner-based human output for long-running operations
+- `bin/utils/github-api.js` — all GitHub API calls via `octokit` (releases, branches, commits, PRs, tags, auth)
+- `bin/utils/slack.js` — Slack webhook publishing with exponential-backoff retry
+- `bin/utils/git.js` — local git operations (repo detection, remote URL parsing, tag name validation)
+- `bin/utils/spinner.js` — shared `ora` spinner singleton and output format state
+- `bin/utils/flow.js` — thin orchestration: network connectivity check, env variable check, re-exports from the modules above
 
-`bin/utils/helper.js` provides utility behavior (repo detection, defaults, prompt interaction, templating input prep).
+`bin/utils/helper.js` provides utility behavior (release name/tag defaults, prompt interaction, Slack message templating).
 
 ## Notification Provider Boundary
 
@@ -135,6 +140,5 @@ Validation entrypoint:
 
 ## Architectural Constraints
 
-- `utils/flow.js` still mixes transport and spinner concerns in one module; future extraction into API client + UI progress adapter would reduce coupling.
 - The project remains JavaScript-first (no TypeScript dependency), so contracts rely on tests + validation instead of static types.
 - CLI parsing currently normalizes legacy behavior for v2 compatibility; v3 can simplify this surface by removing deprecated options.

@@ -82,7 +82,6 @@ export function prepareChangeLog(givenBody, changeLog) {
     }
 
     let releaseMessage = "";
-    // FIXME: there should be a better way
     changeLog.forEach(commit => {
         let message = commit.split('\n')[0];
         releaseMessage += `- ${message}\n`;
@@ -120,10 +119,7 @@ export function retrieveReleaseRepo(repo) {
  * @returns {boolean}
  */
 export function requiredEnvVariablesExist() {
-    if (process.env.YABA_GITHUB_ACCESS_TOKEN) {
-        return true;
-    }
-    return false;
+    return !!process.env.YABA_GITHUB_ACCESS_TOKEN;
 }
 
 /**

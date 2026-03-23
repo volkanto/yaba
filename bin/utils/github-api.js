@@ -63,8 +63,8 @@ export async function fetchLastRelease(owner, repo) {
     spinner.start('Fetching the last release...');
     try {
         const { data: release } = await octokit.request('GET /repos/{owner}/{repo}/releases/latest', {
-            owner: owner,
-            repo: repo
+            owner,
+            repo
         });
         spinner.succeed(`Last release: ${kleur.blue().bold().underline(release.tag_name)}`);
         return release;
@@ -84,14 +84,14 @@ export async function fetchLastRelease(owner, repo) {
  *
  * @param owner the owner of the repository
  * @param repo the repository to fetch the head branch name
- * @returns {Promise<null>}
+ * @returns {Promise<string|null>}
  */
 export async function fetchHeadBranch(owner, repo) {
     spinner.start('Fetching head branch...');
     try {
         const { data: repository } = await octokit.request('GET /repos/{owner}/{repo}', {
-            owner: owner,
-            repo: repo
+            owner,
+            repo
         });
 
         spinner.succeed(`Head branch: ${kleur.blue().bold().underline(repository.default_branch)}`);
@@ -110,10 +110,10 @@ export async function fetchHeadBranch(owner, repo) {
  * @param repo the repository to prepare changelog for
  * @param head the head branch
  * @param lastRelease the last release of the repo
- * @returns {Promise<*|*>}
+ * @returns {Promise<string[]>}
  */
 export async function prepareChangeLog(owner, repo, head, lastRelease) {
-    return lastRelease == null
+    return lastRelease === null
         ? await listCommits(owner, repo, head)
         : await prepareChangelog(owner, repo, lastRelease.tag_name, head);
 }
@@ -132,10 +132,10 @@ export async function prepareChangelog(owner, repo, base, head) {
 
     try {
         const { data: changeLog } = await octokit.request('GET /repos/{owner}/{repo}/compare/{base}...{head}', {
-            owner: owner,
-            repo: repo,
-            base: base,
-            head: head
+            owner,
+            repo,
+            base,
+            head
         });
 
         if (changeLog.commits.length !== 0) {
@@ -158,14 +158,14 @@ export async function prepareChangelog(owner, repo, base, head) {
  * @param owner the owner of the repository
  * @param repo the repository to fetch commits from
  * @param head the head branch of the {@code repo}
- * @returns {Promise<*>}
+ * @returns {Promise<string[]>}
  */
 export async function listCommits(owner, repo, head) {
     spinner.start(`Fetching commits from ${head} reference...`);
     try {
         const { data: commits } = await octokit.request('GET /repos/{owner}/{repo}/commits', {
-            owner: owner,
-            repo: repo,
+            owner,
+            repo,
             sha: head
         });
         spinner.succeed('Commits have been fetched...');
@@ -194,12 +194,12 @@ export async function createRelease(owner, repo, draft, name, body, tag_name, ta
     try {
         spinner.start('Preparing the release...');
         const createReleasePayload = {
-            owner: owner,
-            repo: repo,
-            draft: draft,
+            owner,
+            repo,
+            draft,
             name: helper.releaseName(name),
-            body: body,
-            tag_name: tag_name
+            body,
+            tag_name
         };
 
         if (typeof targetCommitish === 'string' && targetCommitish.trim().length > 0) {
@@ -221,11 +221,11 @@ export async function createRelease(owner, repo, draft, name, body, tag_name, ta
                 spinner.start('Retrying release preparation with second-precision tag...');
 
                 const retryPayload = {
-                    owner: owner,
-                    repo: repo,
-                    draft: draft,
+                    owner,
+                    repo,
+                    draft,
                     name: helper.releaseName(name),
-                    body: body,
+                    body,
                     tag_name: fallbackTagName
                 };
 
@@ -257,8 +257,8 @@ export async function createRelease(owner, repo, draft, name, body, tag_name, ta
 export async function tagExists(owner, repo, tagName) {
     try {
         const { data: refs } = await octokit.request('GET /repos/{owner}/{repo}/git/matching-refs/{ref}', {
-            owner: owner,
-            repo: repo,
+            owner,
+            repo,
             ref: `tags/${tagName}`
         });
 
@@ -284,8 +284,8 @@ export async function tagExists(owner, repo, tagName) {
 export async function fetchPullRequestByNumber(owner, repo, pullNumber) {
     try {
         const { data: pullRequest } = await octokit.request('GET /repos/{owner}/{repo}/pulls/{pull_number}', {
-            owner: owner,
-            repo: repo,
+            owner,
+            repo,
             pull_number: pullNumber
         });
 
@@ -313,9 +313,9 @@ export async function resolveTargetCommitish(owner, repo, ref) {
     spinner.start(`Validating target reference '${ref}'...`);
     try {
         const { data: commit } = await octokit.request('GET /repos/{owner}/{repo}/commits/{ref}', {
-            owner: owner,
-            repo: repo,
-            ref: ref
+            owner,
+            repo,
+            ref
         });
         spinner.succeed(`Target reference resolved to commit ${kleur.blue().bold().underline(commit.sha.substring(0, 12))}`);
         return commit.sha;
@@ -327,7 +327,7 @@ export async function resolveTargetCommitish(owner, repo, ref) {
 
 /**
  * retrieves the username with the help of the authentication token
- * @returns {Promise<*>}
+ * @returns {Promise<string>}
  */
 export async function retrieveUsername() {
     try {
@@ -364,7 +364,7 @@ export async function inspectGithubAuth(owner, repo) {
             try {
                 await octokit.request('GET /repos/{owner}/{repo}', {
                     owner: resolvedOwner,
-                    repo: repo
+                    repo
                 });
 
                 diagnostics.repoAccess = {

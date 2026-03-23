@@ -20,7 +20,7 @@ const RETRYABLE_NETWORK_CODES = ['ENOTFOUND', 'ECONNREFUSED', 'ECONNRESET', 'ETI
  */
 export async function publish(publish, repo, changelog, releaseUrl, releaseName, compareUrl) {
 
-    if (publish == true) {
+    if (publish) {
 
         spinner.start('Sending release information to Slack channel...');
 

@@ -3,7 +3,7 @@
  * checks if the given string is blank or not.
  *
  * @param str the given string
- * @returns {boolean|boolean} true if the given string is blank, otherwise returns true
+ * @returns {boolean} true if the given string is blank, otherwise returns false
  */
 export function isBlank(str) {
     return (str === "undefined" || !str || /^\s*$/.test(str));

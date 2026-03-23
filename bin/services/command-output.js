@@ -71,7 +71,7 @@ export function printReleasePreview(releasePreview) {
         `New tag: ${releasePreview.releaseTag}`,
         `Previous tag: ${releasePreview.lastReleaseTag} (${releasePreview.releaseTagSource})`,
         `Target commit-ish: ${releasePreview.targetCommitish}`,
-        `Draft: ${releasePreview.draft ? "true" : "false"}`
+        `Draft: ${releasePreview.draft}`
     ].join("\n");
 
     console.log("\n" + boxen(summary, summaryBoxOptions));

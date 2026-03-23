@@ -32,7 +32,7 @@ export {
 export function checkRequiredEnvVariables() {
 
     spinner.start('Checking required ENV variables...');
-    if (helper.requiredEnvVariablesExist() === false) {
+    if (!helper.requiredEnvVariablesExist()) {
         spinner.fail('The required env variables are not set in order to run the command.');
         throw createError('The required env variables are not set in order to run the command.', exitCodes.VALIDATION);
     }

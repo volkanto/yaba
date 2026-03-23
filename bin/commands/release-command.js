@@ -238,7 +238,7 @@ async function resolveReleaseTarget(repoOwner, releaseRepo, releaseContext, fall
 
 async function checkHeadBranch(repoOwner, releaseRepo) {
     const headBranch = await flow.fetchHeadBranch(repoOwner, releaseRepo);
-    if (headBranch == null) {
+    if (headBranch === null) {
         throw createError("Head branch can not be found! The release has been interrupted!", exitCodes.UPSTREAM);
     }
     return headBranch;

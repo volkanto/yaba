@@ -1,5 +1,6 @@
 import * as helper from "../utils/helper.js";
 import * as flow from "../utils/flow.js";
+import * as git from "../utils/git.js";
 import * as templateUtils from "../utils/template-utils.js";
 import { exitCodes } from "../utils/exit-codes.js";
 import { createError } from "../utils/errors.js";
@@ -245,8 +246,8 @@ async function checkHeadBranch(repoOwner, releaseRepo) {
 
 function checkDirectory(options, releaseRepo, runtimeConfig) {
     const hasRepoFromConfig = isNonEmptyString(runtimeConfig?.release?.repo);
-    if (options.repo == undefined && !hasRepoFromConfig && !helper.isGitRepo()) {
-        throw createError(`The directory '${helper.retrieveCurrentDirectory()}' is not a Git repo.`, exitCodes.VALIDATION);
+    if (options.repo == undefined && !hasRepoFromConfig && !git.isGitRepo()) {
+        throw createError(`The directory '${git.retrieveCurrentDirectory()}' is not a Git repo.`, exitCodes.VALIDATION);
     }
 
     if (!isNonEmptyString(releaseRepo) || releaseRepo === "not a git repo") {

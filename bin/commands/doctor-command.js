@@ -1,5 +1,7 @@
 import * as helper from "../utils/helper.js";
 import * as flow from "../utils/flow.js";
+import * as git from "../utils/git.js";
+import * as githubApi from "../utils/github-api.js";
 import { exitCodes } from "../utils/exit-codes.js";
 import { normalizeError } from "../utils/errors.js";
 import { firstDefined } from "../utils/runtime-config.js";
@@ -17,8 +19,8 @@ export async function runDoctorCommand(options, runtimeConfig, isJsonOutput) {
     const checks = [];
     const tokenConfigured = helper.requiredEnvVariablesExist();
     const tokenKind = detectTokenKind(process.env.YABA_GITHUB_ACCESS_TOKEN);
-    const gitRepo = helper.isGitRepo();
-    const detectedRepo = gitRepo ? helper.retrieveCurrentRepoName() : null;
+    const gitRepo = git.isGitRepo();
+    const detectedRepo = gitRepo ? git.retrieveCurrentRepoName() : null;
     const configuredOwner = firstDefined(
         options.owner,
         process.env.YABA_GITHUB_REPO_OWNER,
@@ -97,7 +99,7 @@ export async function runDoctorCommand(options, runtimeConfig, isJsonOutput) {
 
     if (tokenConfigured) {
         try {
-            const authDiagnostics = await flow.inspectGithubAuth(configuredOwner, configuredRepo);
+            const authDiagnostics = await githubApi.inspectGithubAuth(configuredOwner, configuredRepo);
             const scopesSummary = summarizeOAuthScopes(authDiagnostics.oauthScopes);
             checks.push(createDoctorCheck(
                 "github.auth",

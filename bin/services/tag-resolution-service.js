@@ -3,7 +3,7 @@ import { createRequire } from "module";
 import { createError } from "../utils/errors.js";
 import { exitCodes } from "../utils/exit-codes.js";
 import { isNonEmptyString } from "../utils/runtime-config.js";
-import * as helper from "../utils/helper.js";
+import { isValidGitTagName } from "../utils/git.js";
 
 const require = createRequire(import.meta.url);
 const packageInfo = require("../../package.json");
@@ -44,9 +44,9 @@ export async function resolveReleaseTag({
         env: env
     });
 
-    if (!helper.isValidGitTagName(candidate)) {
+    if (!isValidGitTagName(candidate)) {
         const sanitizedCandidate = sanitizeTagCandidate(candidate);
-        if (!helper.isValidGitTagName(sanitizedCandidate)) {
+        if (!isValidGitTagName(sanitizedCandidate)) {
             throw createError(
                 `Resolved tag '${candidate}' is not a valid Git tag name. Provide '--tag' explicitly or adjust 'release.tagPattern'.`,
                 exitCodes.VALIDATION

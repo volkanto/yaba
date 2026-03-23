@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import * as helper from "../utils/helper.js";
-import * as flow from "../utils/flow.js";
+import * as githubApi from "../utils/github-api.js";
 import { createError } from "../utils/errors.js";
 import { exitCodes } from "../utils/exit-codes.js";
 import {
@@ -184,7 +184,7 @@ export async function resolveOwner(options, runtimeConfig) {
     if (isNonEmptyString(runtimeConfig?.github?.owner)) {
         return runtimeConfig.github.owner.trim();
     }
-    const username = await flow.retrieveUsername();
+    const username = await githubApi.retrieveUsername();
     return helper.retrieveOwner(null, username);
 }
 

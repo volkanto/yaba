@@ -1,9 +1,9 @@
-import * as flow from "../../utils/flow.js";
+import { publish } from "../../utils/slack.js";
 
 export const slackProvider = {
     name: "slack",
     async publish(context) {
-        await flow.publishToSlack(
+        await publish(
             true,
             context.repo,
             context.changelog,

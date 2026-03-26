@@ -18,6 +18,11 @@ test("buildDefaultConfigTemplate includes nullable release target", () => {
     assert.deepEqual(template.notifications.providers, ["slack"]);
 });
 
+test("buildDefaultConfigTemplate sets noStatusChecks to false", () => {
+    const template = buildDefaultConfigTemplate();
+    assert.equal(template.release.noStatusChecks, false);
+});
+
 test("resolveReleaseContext applies target precedence from options over config", () => {
     const runtimeConfig = buildDefaultConfigTemplate();
     runtimeConfig.release.target = "main";
@@ -106,6 +111,68 @@ test("resolveReleaseContext marks invalid maxCommits as NaN", () => {
     );
 
     assert.equal(Number.isNaN(resolved.maxCommits), true);
+});
+
+test("resolveReleaseContext defaults noStatusChecks to false", () => {
+    const runtimeConfig = buildDefaultConfigTemplate();
+
+    const resolved = resolveReleaseContext(
+        {
+            target: undefined,
+            releaseName: undefined,
+            tag: undefined,
+            draft: undefined,
+            publish: undefined,
+            interactive: undefined,
+            body: undefined,
+            noStatusChecks: undefined
+        },
+        runtimeConfig
+    );
+
+    assert.equal(resolved.noStatusChecks, false);
+});
+
+test("resolveReleaseContext reads noStatusChecks from config", () => {
+    const runtimeConfig = buildDefaultConfigTemplate();
+    runtimeConfig.release.noStatusChecks = true;
+
+    const resolved = resolveReleaseContext(
+        {
+            target: undefined,
+            releaseName: undefined,
+            tag: undefined,
+            draft: undefined,
+            publish: undefined,
+            interactive: undefined,
+            body: undefined,
+            noStatusChecks: undefined
+        },
+        runtimeConfig
+    );
+
+    assert.equal(resolved.noStatusChecks, true);
+});
+
+test("resolveReleaseContext flag takes precedence over config for noStatusChecks", () => {
+    const runtimeConfig = buildDefaultConfigTemplate();
+    runtimeConfig.release.noStatusChecks = false;
+
+    const resolved = resolveReleaseContext(
+        {
+            target: undefined,
+            releaseName: undefined,
+            tag: undefined,
+            draft: undefined,
+            publish: undefined,
+            interactive: undefined,
+            body: undefined,
+            noStatusChecks: true
+        },
+        runtimeConfig
+    );
+
+    assert.equal(resolved.noStatusChecks, true);
 });
 
 test("resolveReleaseContext applies tag strategy policy values", () => {

@@ -32,7 +32,8 @@ export function buildDefaultConfigTemplate() {
             draft: false,
             interactive: true,
             firstReleaseMaxCommits: 50,
-            labelBuckets: null
+            labelBuckets: null,
+            noStatusChecks: false
         },
         notifications: {
             providers: ["slack"],
@@ -125,7 +126,12 @@ export function resolveReleaseContext(options, runtimeConfig) {
             true
         ),
         body: options.body,
-        labelBuckets: runtimeConfig?.release?.labelBuckets ?? null
+        labelBuckets: runtimeConfig?.release?.labelBuckets ?? null,
+        noStatusChecks: resolveBoolean(
+            options.noStatusChecks,
+            runtimeConfig?.release?.noStatusChecks,
+            false
+        )
     };
 }
 

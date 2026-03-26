@@ -19,6 +19,7 @@ import {
     resolveReleaseContext,
     resolveReleaseRepo
 } from "../services/runtime-config-service.js";
+import { verifyStatusChecks } from "../services/status-check-service.js";
 
 export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
     const releaseRepo = resolveReleaseRepo(options, runtimeConfig);
@@ -33,6 +34,7 @@ export async function runReleaseCommand(options, runtimeConfig, isJsonOutput) {
     const headBranch = releaseContext.target ? null : await checkHeadBranch(repoOwner, releaseRepo);
     const releaseTarget = await resolveReleaseTarget(repoOwner, releaseRepo, releaseContext, headBranch);
     const targetReference = isNonEmptyString(releaseContext.target) ? releaseContext.target : headBranch;
+    await verifyStatusChecks(repoOwner, releaseRepo, releaseTarget, releaseContext.noStatusChecks);
     const lastRelease = await flow.fetchLastRelease(repoOwner, releaseRepo);
     const releaseTag = await resolveTagName(repoOwner, releaseRepo, releaseContext, releaseTarget, targetReference);
     const changeLog = await flow.prepareChangeLog(repoOwner, releaseRepo, releaseTarget, lastRelease);

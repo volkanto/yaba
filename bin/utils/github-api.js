@@ -339,6 +339,54 @@ export async function retrieveUsername() {
 }
 
 /**
+ * fetches the combined commit status for a given ref using the legacy GitHub Status API.
+ * This covers status checks set by third-party integrations and older CI systems.
+ *
+ * @param owner the repository owner
+ * @param repo the repository name
+ * @param ref the commit SHA, branch, or tag to check
+ * @returns {Promise<{state: string, totalCount: number}>}
+ */
+export async function fetchCommitStatus(owner, repo, ref) {
+    try {
+        const { data } = await octokit.request('GET /repos/{owner}/{repo}/commits/{ref}/status', {
+            owner,
+            repo,
+            ref
+        });
+        return { state: data.state, totalCount: data.total_count };
+    } catch (error) {
+        throw mapGithubError(error, `Could not fetch commit status for ref '${ref}'.`);
+    }
+}
+
+/**
+ * fetches all GitHub Actions check runs for a given ref.
+ * This covers checks reported by GitHub Actions workflows and GitHub Apps.
+ *
+ * @param owner the repository owner
+ * @param repo the repository name
+ * @param ref the commit SHA, branch, or tag to check
+ * @returns {Promise<Array<{name: string, status: string, conclusion: string|null}>>}
+ */
+export async function fetchCommitCheckRuns(owner, repo, ref) {
+    try {
+        const { data } = await octokit.request('GET /repos/{owner}/{repo}/commits/{ref}/check-runs', {
+            owner,
+            repo,
+            ref
+        });
+        return data.check_runs.map(run => ({
+            name: run.name,
+            status: run.status,
+            conclusion: run.conclusion
+        }));
+    } catch (error) {
+        throw mapGithubError(error, `Could not fetch check runs for ref '${ref}'.`);
+    }
+}
+
+/**
  * inspects auth context and optionally checks repository access when owner/repo are provided.
  *
  * @param owner optional repository owner for access check

@@ -139,3 +139,19 @@ test('parses release hotfix command', () => {
     assert.equal(options.commandName, 'release.hotfix');
     assert.equal(options.releaseCommand, 'hotfix');
 });
+
+test('--no-status-checks sets noStatusChecks to true', () => {
+    const { options } = parseOptions(['release', 'create', '--no-status-checks']);
+    assert.equal(options.noStatusChecks, true);
+});
+
+test('noStatusChecks is undefined when --no-status-checks is not provided', () => {
+    const { options } = parseOptions(['release', 'create']);
+    assert.equal(options.noStatusChecks, undefined);
+});
+
+test('--no-status-checks is accepted on release hotfix', () => {
+    const { options, supported } = parseOptions(['release', 'hotfix', '--no-status-checks']);
+    assert.equal(supported, true);
+    assert.equal(options.noStatusChecks, true);
+});

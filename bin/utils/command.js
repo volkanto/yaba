@@ -54,6 +54,18 @@ const commands = yargs(rawArguments)
         describe: "Fail when commit count exceeds this limit.",
         type: "number"
     })
+    .option("no-status-checks", {
+        describe: "Skip the pre-release GitHub status checks gate. By default, yaba verifies that all " +
+            "commit status checks and GitHub Actions check runs on the target ref have completed " +
+            "successfully before proceeding with a release. Pending checks indicate that CI is still " +
+            "running against the target, and failed checks indicate that something is broken — both " +
+            "block the release by default. Use this flag to bypass that gate, for example in automated " +
+            "pipelines where the release workflow itself is the only relevant check, or when you " +
+            "intentionally release from a ref with known non-blocking check results. Can also be set " +
+            "permanently via 'noStatusChecks: true' in your yaba.config.json.",
+        type: "boolean",
+        default: false
+    })
     .option("n", {
         alias: ["name", "release-name"],
         describe: "The name of the release.",
@@ -169,6 +181,7 @@ function normalizeOptions(parsed) {
     normalized.allowEmpty = parsed["allow-empty"] === true;
     normalized.failOnEmpty = parsed["fail-on-empty"] === true;
     normalized.maxCommits = maxCommitsProvided ? parsed["max-commits"] : undefined;
+    normalized.noStatusChecks = wasFlagProvided("--no-status-checks") ? true : undefined;
     normalized.releaseListLimit = typeof parsed.limit === 'number' ? parsed.limit : undefined;
     normalized.notifications = parsed.notifications;
     normalized.deprecationWarnings = collectDeprecationWarnings(parsed, commandName, yesProvided);

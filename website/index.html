@@ -52,7 +52,8 @@
           Yaba helps teams prepare changelogs, preview release payloads, create GitHub releases, and wire Slack notifications
           into repeatable release workflows. Recent upgrades add target-based release generation, release safety controls,
           config validation, configurable release notes grouping, strategy-based tag generation, resilient Slack retries,
-          and dedicated hotfix release support.
+          dedicated hotfix release support, GitHub status check gating before release creation, and an improved Slack
+          newsletter format for release notes.
         </p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="https://www.npmjs.com/package/yaba-release-cli" target="_blank" rel="noopener noreferrer">Install from npm</a>
@@ -146,24 +147,16 @@
       <section class="section reveal" id="updates">
         <div class="section-heading">
           <p class="eyebrow">Recent Updates</p>
-          <h2>What changed after v2.2.0</h2>
+          <h2>What changed after v2.3.0</h2>
         </div>
         <div class="card-grid">
           <article class="card">
-            <h3>release list command</h3>
-            <p>Browse the latest releases for any repository with an interactive selector. Supports <code>--limit</code> (default 5, 0 = all) and <code>--format json</code> for scripting.</p>
+            <h3>GitHub status check gating</h3>
+            <p>Before creating a release, yaba now verifies that the target commit has all required GitHub status checks passing. Prevents releasing from a broken or in-progress CI state.</p>
           </article>
           <article class="card">
-            <h3>release hotfix command</h3>
-            <p>Dedicated hotfix release workflow with the <code>hotfix_prod_global_YYYYMMDD.HHmm</code> tag pattern enforced automatically. Supports second-precision fallback on tag conflicts.</p>
-          </article>
-          <article class="card">
-            <h3>Preview grouped format fix</h3>
-            <p>Release preview now consistently uses the grouped label-based format when PR label data is available, matching the format used at release creation time.</p>
-          </article>
-          <article class="card">
-            <h3>Improved Slack error visibility</h3>
-            <p>When a Slack announcement fails after a successful release, the underlying error cause is now logged alongside the <code>PARTIAL_SUCCESS</code> exit, making it easier to diagnose webhook issues.</p>
+            <h3>Improved release notes grouping and Slack newsletter</h3>
+            <p>Release notes grouping logic and the Slack newsletter format have been improved for clearer, more readable announcements across both GitHub releases and Slack notifications.</p>
           </article>
         </div>
       </section>

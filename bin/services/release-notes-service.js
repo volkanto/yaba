@@ -45,20 +45,22 @@ export async function buildReleaseNotesBundle({
     const pullRequests = await resolvePullRequests(pullRequestNumbers, fetchPullRequest);
     const hasLabels = pullRequests.some(item => item.labels.length > 0);
 
+    const isCustomBuckets = Array.isArray(labelBuckets) && labelBuckets.length > 0;
+    const activeBuckets = isCustomBuckets ? labelBuckets : DEFAULT_LABEL_BUCKETS;
+
     let githubReleaseBody;
     let mode;
     let grouped = null;
 
     if (hasLabels) {
-        const activeBuckets = Array.isArray(labelBuckets) && labelBuckets.length > 0
-            ? labelBuckets
-            : DEFAULT_LABEL_BUCKETS;
+        const noMatchFallback = isCustomBuckets ? "unlabelled" : "internal";
 
-        grouped = groupPullRequestsByLabels(pullRequests, activeBuckets);
+        grouped = groupPullRequestsByLabels(pullRequests, activeBuckets, noMatchFallback);
 
         const sectionsStr = [
             ...activeBuckets.map(bucket => renderSection(resolveSectionTitle(bucket), grouped[bucket.key])),
-            renderSection("Internal", grouped.internal)
+            renderSection("Internal", grouped.internal),
+            renderSection("Unlabelled", grouped.unlabelled)
         ].filter(Boolean).join("\n");
 
         githubReleaseBody = templateUtils.generateGroupedGithubReleaseNotes(
@@ -92,7 +94,7 @@ export async function buildReleaseNotesBundle({
             compareUrl: compareUrl,
             grouped: grouped,
             commitEntries: commitEntries,
-            activeBuckets: Array.isArray(labelBuckets) && labelBuckets.length > 0 ? labelBuckets : DEFAULT_LABEL_BUCKETS
+            activeBuckets: isCustomBuckets ? labelBuckets : DEFAULT_LABEL_BUCKETS
         })
     };
 }
@@ -154,28 +156,32 @@ async function resolvePullRequests(pullRequestNumbers, fetchPullRequest) {
     return results.filter(Boolean);
 }
 
-function groupPullRequestsByLabels(pullRequests, activeBuckets) {
-    const grouped = { internal: [] };
+function groupPullRequestsByLabels(pullRequests, activeBuckets, noMatchFallback) {
+    const grouped = { internal: [], unlabelled: [] };
     for (const bucket of activeBuckets) {
         grouped[bucket.key] = [];
     }
 
     for (const pullRequest of pullRequests) {
-        const bucket = resolveBucket(pullRequest.labels, activeBuckets);
-        grouped[bucket].push(pullRequest);
+        if (pullRequest.labels.length === 0) {
+            grouped.unlabelled.push(pullRequest);
+        } else {
+            const bucket = resolveBucket(pullRequest.labels, activeBuckets, noMatchFallback);
+            grouped[bucket].push(pullRequest);
+        }
     }
 
     return grouped;
 }
 
-function resolveBucket(labels, activeBuckets) {
+function resolveBucket(labels, activeBuckets, noMatchFallback) {
     for (const bucket of activeBuckets) {
         if (labels.some(label => bucket.labels.includes(label))) {
             return bucket.key;
         }
     }
 
-    return "internal";
+    return noMatchFallback;
 }
 
 function resolveSectionTitle(bucket) {
@@ -230,8 +236,8 @@ function buildSlackNewsletter({ releaseName, compareUrl, grouped, commitEntries,
         ? buildShippedFromPullRequests(grouped, activeBuckets)
         : buildShippedFromCommits(commitEntries);
 
-    const findFeatures = activeBuckets.find(b => b.key === "features");
-    const findBreaking = activeBuckets.find(b => b.key === "breakingChanges");
+    const findFeatures = activeBuckets.find(b => b.labels.some(l => ["feature", "feat", "enhancement"].includes(l)));
+    const findBreaking = activeBuckets.find(b => b.labels.some(l => ["breaking", "type:breaking", "semver:major"].includes(l)));
 
     const whyMatters = grouped && findFeatures && grouped[findFeatures.key]?.length > 0
         ? "- Developer workflows gain new capabilities.\n- Release safety and validation behavior are stronger."
@@ -259,16 +265,35 @@ function buildSlackNewsletter({ releaseName, compareUrl, grouped, commitEntries,
 }
 
 function buildShippedFromPullRequests(grouped, activeBuckets) {
-    const ordered = activeBuckets
-        .flatMap(bucket => grouped[bucket.key] ?? [])
-        .concat(grouped.internal ?? [])
-        .slice(0, 5);
+    const importantLabels = ["breaking", "semver:major", "feature", "feat", "enhancement", "security", "type:security", "fix", "bug", "bugfix", "type:fix"];
 
-    if (ordered.length === 0) {
+    const bucketRank = bucket => {
+        const indices = bucket.labels.map(l => importantLabels.indexOf(l)).filter(i => i >= 0);
+        return indices.length > 0 ? Math.min(...indices) : importantLabels.length;
+    };
+
+    const sortedBuckets = [...activeBuckets].sort((a, b) => bucketRank(a) - bucketRank(b));
+
+    const renderSlackSection = (title, items) =>
+        `*${title}*\n${items.map(item => `- #${item.number} ${item.title}`).join("\n")}`;
+
+    const sections = [
+        ...sortedBuckets
+            .filter(bucket => grouped[bucket.key]?.length > 0)
+            .map(bucket => renderSlackSection(resolveSectionTitle(bucket), grouped[bucket.key])),
+        ...(grouped.internal?.length > 0
+            ? [renderSlackSection("Internal", grouped.internal)]
+            : []),
+        ...(grouped.unlabelled?.length > 0
+            ? [renderSlackSection("Unlabelled", grouped.unlabelled)]
+            : [])
+    ];
+
+    if (sections.length === 0) {
         return "- Maintenance updates in this release.";
     }
 
-    return ordered.map(item => `- #${item.number} ${item.title}`).join("\n");
+    return sections.join("\n\n");
 }
 
 function buildShippedFromCommits(commitEntries) {

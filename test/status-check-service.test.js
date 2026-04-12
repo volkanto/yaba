@@ -175,7 +175,7 @@ test("verifyStatusChecks prioritises check run failure over legacy status", asyn
     );
 });
 
-test("verifyStatusChecks skips own check run when running inside GitHub Actions", async () => {
+test("verifyStatusChecks skips own in_progress check run when running inside GitHub Actions", async () => {
     process.env.GITHUB_ACTIONS = 'true';
     process.env.GITHUB_JOB = 'release';
     try {
@@ -204,6 +204,48 @@ test("verifyStatusChecks still blocks on other in_progress check runs when runni
             error => {
                 assert.match(error.message, /ci/);
                 assert.match(error.message, /in_progress/);
+                return true;
+            }
+        );
+    } finally {
+        delete process.env.GITHUB_ACTIONS;
+        delete process.env.GITHUB_JOB;
+    }
+});
+
+test("verifyStatusChecks does not skip own check run when it is queued", async () => {
+    process.env.GITHUB_ACTIONS = 'true';
+    process.env.GITHUB_JOB = 'release';
+    try {
+        await assert.rejects(
+            () => verifyStatusChecks("owner", "repo", "abc123", false, {
+                fetchStatus: async () => noChecks,
+                fetchCheckRuns: async () => [makeRun("release", "queued")]
+            }),
+            error => {
+                assert.match(error.message, /release/);
+                assert.match(error.message, /queued/);
+                return true;
+            }
+        );
+    } finally {
+        delete process.env.GITHUB_ACTIONS;
+        delete process.env.GITHUB_JOB;
+    }
+});
+
+test("verifyStatusChecks does not skip own check run when it has a failed conclusion", async () => {
+    process.env.GITHUB_ACTIONS = 'true';
+    process.env.GITHUB_JOB = 'release';
+    try {
+        await assert.rejects(
+            () => verifyStatusChecks("owner", "repo", "abc123", false, {
+                fetchStatus: async () => noChecks,
+                fetchCheckRuns: async () => [makeRun("release", "completed", "failure")]
+            }),
+            error => {
+                assert.match(error.message, /release/);
+                assert.match(error.message, /failure/);
                 return true;
             }
         );

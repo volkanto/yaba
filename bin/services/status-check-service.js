@@ -46,7 +46,10 @@ export async function verifyStatusChecks(owner, repo, ref, skip, {
         fetchCheckRuns(owner, repo, ref)
     ]);
 
-    const pendingRun = checkRuns.find(run => PENDING_CHECK_RUN_STATUSES.has(run.status) && run.name !== selfCheckRunName);
+    const pendingRun = checkRuns.find(run =>
+        PENDING_CHECK_RUN_STATUSES.has(run.status) &&
+        !(run.status === 'in_progress' && run.name === selfCheckRunName)
+    );
     if (pendingRun) {
         spinner.fail(`Status checks are still running on '${ref}'.`);
         throw createError(
@@ -56,7 +59,7 @@ export async function verifyStatusChecks(owner, repo, ref, skip, {
         );
     }
 
-    const failedRun = checkRuns.find(run => FAILED_CHECK_RUN_CONCLUSIONS.has(run.conclusion) && run.name !== selfCheckRunName);
+    const failedRun = checkRuns.find(run => FAILED_CHECK_RUN_CONCLUSIONS.has(run.conclusion));
     if (failedRun) {
         spinner.fail(`Status checks have failed on '${ref}'.`);
         throw createError(

@@ -35,6 +35,10 @@ export async function verifyStatusChecks(owner, repo, ref, skip, {
         return;
     }
 
+    // When running inside GitHub Actions, GITHUB_JOB is the current job's key.
+    // Exclude it to prevent a release job from blocking itself on its own check run.
+    const selfCheckRunName = process.env.GITHUB_ACTIONS === 'true' ? process.env.GITHUB_JOB : null;
+
     spinner.start(`Verifying status checks on '${ref}'...`);
 
     const [commitStatus, checkRuns] = await Promise.all([
@@ -42,7 +46,10 @@ export async function verifyStatusChecks(owner, repo, ref, skip, {
         fetchCheckRuns(owner, repo, ref)
     ]);
 
-    const pendingRun = checkRuns.find(run => PENDING_CHECK_RUN_STATUSES.has(run.status));
+    const pendingRun = checkRuns.find(run =>
+        PENDING_CHECK_RUN_STATUSES.has(run.status) &&
+        !(run.status === 'in_progress' && run.name === selfCheckRunName)
+    );
     if (pendingRun) {
         spinner.fail(`Status checks are still running on '${ref}'.`);
         throw createError(

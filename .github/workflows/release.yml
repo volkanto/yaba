@@ -1,6 +1,6 @@
 name: "Release with Yaba"
 
-on: 
+on:
   workflow_dispatch:
     inputs:
         release-descriptor:
@@ -11,6 +11,11 @@ on:
           required: true
           description: Tag name
           default: ''
+        no-status-checks:
+          required: false
+          description: Skip GitHub status check gate (use when releasing a fix for the gate itself)
+          type: boolean
+          default: false
 permissions:
   contents: write
   id-token: write
@@ -67,7 +72,7 @@ jobs:
         env:
           YABA_GITHUB_ACCESS_TOKEN: ${{ github.token }}
           YABA_GITHUB_REPO_OWNER: ${{ github.repository_owner }}
-        run: yaba release create -i false -r ${{ github.event.repository.name }} -n "${{ github.event.inputs.release-descriptor }}" -t "${{ github.event.inputs.tag-name }}"
+        run: yaba release create -i false -r ${{ github.event.repository.name }} -n "${{ github.event.inputs.release-descriptor }}" -t "${{ github.event.inputs.tag-name }}"${{ github.event.inputs.no-status-checks == 'true' && ' --no-status-checks' || '' }}
 
   publish-npm:
     name: Publish to npm Registry

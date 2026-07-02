@@ -213,17 +213,34 @@ test("verifyStatusChecks still blocks on other in_progress check runs when runni
     }
 });
 
-test("verifyStatusChecks does not skip own check run when it is queued", async () => {
+test("verifyStatusChecks skips own queued check run when running inside GitHub Actions", async () => {
+    process.env.GITHUB_ACTIONS = 'true';
+    process.env.GITHUB_JOB = 'release';
+    try {
+        await assert.doesNotReject(() => verifyStatusChecks("owner", "repo", "abc123", false, {
+            fetchStatus: async () => noChecks,
+            fetchCheckRuns: async () => [makeRun("release", "queued")]
+        }));
+    } finally {
+        delete process.env.GITHUB_ACTIONS;
+        delete process.env.GITHUB_JOB;
+    }
+});
+
+test("verifyStatusChecks still blocks on other queued check runs when running inside GitHub Actions", async () => {
     process.env.GITHUB_ACTIONS = 'true';
     process.env.GITHUB_JOB = 'release';
     try {
         await assert.rejects(
             () => verifyStatusChecks("owner", "repo", "abc123", false, {
                 fetchStatus: async () => noChecks,
-                fetchCheckRuns: async () => [makeRun("release", "queued")]
+                fetchCheckRuns: async () => [
+                    makeRun("release", "queued"),
+                    makeRun("ci", "queued")
+                ]
             }),
             error => {
-                assert.match(error.message, /release/);
+                assert.match(error.message, /ci/);
                 assert.match(error.message, /queued/);
                 return true;
             }

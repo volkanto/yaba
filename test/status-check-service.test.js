@@ -21,6 +21,8 @@ test("verifyStatusChecks returns immediately when skip is true", async () => {
 });
 
 test("verifyStatusChecks passes when all check runs are completed with success", async () => {
+    delete process.env.GITHUB_ACTIONS;
+    delete process.env.GITHUB_JOB;
     await assert.doesNotReject(() => verifyStatusChecks("owner", "repo", "abc123", false, {
         fetchStatus: async () => successStatus,
         fetchCheckRuns: async () => [
@@ -31,6 +33,8 @@ test("verifyStatusChecks passes when all check runs are completed with success",
 });
 
 test("verifyStatusChecks passes when check runs are completed with neutral or skipped conclusions", async () => {
+    delete process.env.GITHUB_ACTIONS;
+    delete process.env.GITHUB_JOB;
     await assert.doesNotReject(() => verifyStatusChecks("owner", "repo", "abc123", false, {
         fetchStatus: async () => noChecks,
         fetchCheckRuns: async () => [
@@ -41,6 +45,8 @@ test("verifyStatusChecks passes when check runs are completed with neutral or sk
 });
 
 test("verifyStatusChecks passes when there are no check runs and no legacy status checks", async () => {
+    delete process.env.GITHUB_ACTIONS;
+    delete process.env.GITHUB_JOB;
     await assert.doesNotReject(() => verifyStatusChecks("owner", "repo", "abc123", false, {
         fetchStatus: async () => noChecks,
         fetchCheckRuns: async () => []
@@ -48,6 +54,8 @@ test("verifyStatusChecks passes when there are no check runs and no legacy statu
 });
 
 test("verifyStatusChecks throws when a check run is queued", async () => {
+    delete process.env.GITHUB_ACTIONS;
+    delete process.env.GITHUB_JOB;
     await assert.rejects(
         () => verifyStatusChecks("owner", "repo", "abc123", false, {
             fetchStatus: async () => noChecks,
@@ -64,6 +72,8 @@ test("verifyStatusChecks throws when a check run is queued", async () => {
 });
 
 test("verifyStatusChecks throws when a check run is in_progress", async () => {
+    delete process.env.GITHUB_ACTIONS;
+    delete process.env.GITHUB_JOB;
     await assert.rejects(
         () => verifyStatusChecks("owner", "repo", "abc123", false, {
             fetchStatus: async () => noChecks,
@@ -79,6 +89,8 @@ test("verifyStatusChecks throws when a check run is in_progress", async () => {
 });
 
 test("verifyStatusChecks throws when a check run has conclusion failure", async () => {
+    delete process.env.GITHUB_ACTIONS;
+    delete process.env.GITHUB_JOB;
     await assert.rejects(
         () => verifyStatusChecks("owner", "repo", "abc123", false, {
             fetchStatus: async () => noChecks,
@@ -95,6 +107,8 @@ test("verifyStatusChecks throws when a check run has conclusion failure", async 
 });
 
 test("verifyStatusChecks throws when a check run has conclusion timed_out", async () => {
+    delete process.env.GITHUB_ACTIONS;
+    delete process.env.GITHUB_JOB;
     await assert.rejects(
         () => verifyStatusChecks("owner", "repo", "abc123", false, {
             fetchStatus: async () => noChecks,
@@ -110,6 +124,8 @@ test("verifyStatusChecks throws when a check run has conclusion timed_out", asyn
 });
 
 test("verifyStatusChecks throws when a check run has conclusion action_required", async () => {
+    delete process.env.GITHUB_ACTIONS;
+    delete process.env.GITHUB_JOB;
     await assert.rejects(
         () => verifyStatusChecks("owner", "repo", "abc123", false, {
             fetchStatus: async () => noChecks,
@@ -125,6 +141,8 @@ test("verifyStatusChecks throws when a check run has conclusion action_required"
 });
 
 test("verifyStatusChecks throws on legacy pending status when totalCount is non-zero", async () => {
+    delete process.env.GITHUB_ACTIONS;
+    delete process.env.GITHUB_JOB;
     await assert.rejects(
         () => verifyStatusChecks("owner", "repo", "abc123", false, {
             fetchStatus: async () => pendingStatus,
@@ -140,6 +158,8 @@ test("verifyStatusChecks throws on legacy pending status when totalCount is non-
 });
 
 test("verifyStatusChecks throws on legacy failure status when totalCount is non-zero", async () => {
+    delete process.env.GITHUB_ACTIONS;
+    delete process.env.GITHUB_JOB;
     await assert.rejects(
         () => verifyStatusChecks("owner", "repo", "abc123", false, {
             fetchStatus: async () => failureStatus,

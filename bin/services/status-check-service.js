@@ -48,7 +48,7 @@ export async function verifyStatusChecks(owner, repo, ref, skip, {
 
     const pendingRun = checkRuns.find(run =>
         PENDING_CHECK_RUN_STATUSES.has(run.status) &&
-        !(run.status === 'in_progress' && run.name === selfCheckRunName)
+        !(run.name === selfCheckRunName)
     );
     if (pendingRun) {
         spinner.fail(`Status checks are still running on '${ref}'.`);

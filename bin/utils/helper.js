@@ -159,13 +159,82 @@ export function prepareSlackMessage(repo, message, releaseUrl, releaseName, comp
     const templateFile = fs.readFileSync(slackMessageTemplatePath, 'utf8');
     const templateJson = JSON.parse(templateFile);
 
-    return applyTemplateValues(templateJson, {
+    const payload = applyTemplateValues(templateJson, {
         repo: repo,
         newsletterBody: message.trim(),
         releaseUrl: releaseUrl,
         releaseName: releaseName,
         compareUrl: compareUrl || releaseUrl
     });
+
+    payload.blocks = payload.blocks.flatMap(block => {
+        if (block.type === 'header' && block.text?.text) {
+            return [{
+                ...block,
+                text: {
+                    ...block.text,
+                    text: truncateText(block.text.text, 150)
+                }
+            }];
+        }
+
+        if (block.type !== 'section' || block.text?.text !== message.trim()) {
+            return [block];
+        }
+
+        return splitText(message.trim(), 3000).map(text => ({
+            ...block,
+            text: {
+                ...block.text,
+                text: text
+            }
+        }));
+    });
+
+    return payload;
+}
+
+function splitText(value, maxLength) {
+    const chunks = [];
+    let current = '';
+
+    for (const line of value.split('\n')) {
+        const candidate = current ? `${current}\n${line}` : line;
+        if (textLength(candidate) <= maxLength) {
+            current = candidate;
+            continue;
+        }
+
+        if (current) {
+            chunks.push(current);
+            current = '';
+        }
+
+        const characters = Array.from(line);
+        while (characters.length > maxLength) {
+            chunks.push(characters.splice(0, maxLength).join(''));
+        }
+        current = characters.join('');
+    }
+
+    if (current || chunks.length === 0) {
+        chunks.push(current);
+    }
+
+    return chunks;
+}
+
+function truncateText(value, maxLength) {
+    const characters = Array.from(value);
+    if (characters.length <= maxLength) {
+        return value;
+    }
+
+    return `${characters.slice(0, maxLength - 1).join('')}…`;
+}
+
+function textLength(value) {
+    return Array.from(value).length;
 }
 
 

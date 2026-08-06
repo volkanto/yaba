@@ -44,7 +44,12 @@ export async function publish(publish, repo, changelog, releaseUrl, releaseName,
             spinner.succeed('Changelog published to Slack.');
         } catch (error) {
             spinner.fail('Release was created but Slack announcement failed.');
-            throw createError('Release was created but Slack announcement failed.', exitCodes.PARTIAL_SUCCESS, error);
+            const detail = describeSlackFailure(error);
+            throw createError(
+                `Release was created but Slack announcement failed.${detail ? ` ${detail}` : ''}`,
+                exitCodes.PARTIAL_SUCCESS,
+                error
+            );
         }
     }
 }
@@ -94,6 +99,21 @@ function isRetriable(error) {
     }
 
     return status === 429 || status === 408 || (typeof status === 'number' && status >= 500);
+}
+
+function describeSlackFailure(error) {
+    const status = error?.response?.status || error?.status;
+    const responseData = error?.response?.data;
+    const responseText = typeof responseData === 'string'
+        ? responseData.trim()
+        : responseData?.error;
+
+    if (!status && !responseText) {
+        return '';
+    }
+
+    const statusText = status ? `HTTP ${status}` : 'Slack error';
+    return responseText ? `${statusText}: ${responseText}.` : `${statusText}.`;
 }
 
 function resolveMaxAttempts(value) {
